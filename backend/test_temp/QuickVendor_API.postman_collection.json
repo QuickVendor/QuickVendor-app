@@ -1,0 +1,158 @@
+{
+  "info": {
+    "name": "QuickVendor API",
+    "description": "API collection for testing QuickVendor backend endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/health",
+          "host": ["{{base_url}}"],
+          "path": ["api", "health"]
+        },
+        "description": "Check if the API is running"
+      }
+    },
+    {
+      "name": "Register User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"password\": \"{{test_password}}\",\n  \"whatsapp_number\": \"{{test_whatsapp}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/users/register",
+          "host": ["{{base_url}}"],
+          "path": ["api", "users", "register"]
+        },
+        "description": "Register a new vendor account"
+      }
+    },
+    {
+      "name": "Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    var jsonData = pm.response.json();",
+              "    pm.environment.set(\"access_token\", jsonData.access_token);",
+              "    console.log(\"Token saved to environment\");",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "username",
+              "value": "{{test_email}}"
+            },
+            {
+              "key": "password",
+              "value": "{{test_password}}"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/login",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "login"]
+        },
+        "description": "Login and get JWT token"
+      }
+    },
+    {
+      "name": "Get Current User",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "if (!pm.environment.get(\"access_token\")) {",
+              "    console.warn(\"No access token found. Please login first.\");",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/users/me",
+          "host": ["{{base_url}}"],
+          "path": ["api", "users", "me"]
+        },
+        "description": "Get authenticated user profile"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "test_email",
+      "value": "testvendor@example.com",
+      "type": "string"
+    },
+    {
+      "key": "test_password",
+      "value": "testpassword123",
+      "type": "string"
+    },
+    {
+      "key": "test_whatsapp",
+      "value": "2348012345678",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
