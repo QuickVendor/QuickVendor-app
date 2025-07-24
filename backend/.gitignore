@@ -63,7 +63,7 @@ logs/
 htmlcov/
 .tox/
 .hypothesis/
-test_temp/
+# test_temp/
 
 # OS
 .DS_Store
