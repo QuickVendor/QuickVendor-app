@@ -74,14 +74,10 @@ async def get_current_user_profile(
     
     Requires authentication via Bearer token.
     """
-    # Generate store URL if not already set
-    if not current_user.store_url:
-        username = current_user.email.split('@')[0].replace('.', '-')
-        current_user.store_url = f"yourapp.com/{username}"
     
     return UserProfile(
         id=current_user.id,
         email=current_user.email,
         whatsapp_number=current_user.whatsapp_number,
-        store_url=current_user.store_url
+        store_url=None  # Frontend will generate the correct URL
     )

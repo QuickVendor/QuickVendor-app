@@ -1,13 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Input, Textarea, Toggle } from './ui';
 import { Modal } from './ui/Modal';
-import { Upload, Image as ImageIcon } from 'lucide-react';
+import { Upload, X } from 'lucide-react';
+import { createProduct, updateProduct } from '../apiService';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
+// Helper function to get full image URL
+const getImageUrl = (imagePath: string | null | undefined): string => {
+  if (!imagePath) {
+    return '';
+  }
+  
+  // If it's already a full URL, return as is
+  if (imagePath.startsWith('http')) {
+    return imagePath;
+  }
+  
+  // If it's a relative path, prepend the API base URL
+  return `${API_BASE_URL}${imagePath}`;
+};
 
 interface Product {
   id: string;
   name: string;
   price: number;
-  image: string;
+  image_urls: string[];
   clickCount: number;
   description?: string;
   inStock?: boolean;
@@ -25,8 +43,8 @@ interface ProductFormData {
   price: string;
   description: string;
   inStock: boolean;
-  image: File | null;
-  imagePreview: string;
+  images: (File | null)[];
+  imagePreviews: string[];
 }
 
 export const ProductModal: React.FC<ProductModalProps> = ({
@@ -40,8 +58,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     price: '',
     description: '',
     inStock: true,
-    image: null,
-    imagePreview: ''
+    images: [null, null, null, null, null],
+    imagePreviews: ['', '', '', '', '']
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -53,8 +71,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         price: product.price.toString(),
         description: product.description || '',
         inStock: product.inStock ?? true,
-        image: null,
-        imagePreview: product.image || ''
+        images: [null, null, null, null, null],
+        imagePreviews: [...product.image_urls.map(url => getImageUrl(url)), '', '', '', '', ''].slice(0, 5)
       });
     } else {
       setFormData({
@@ -62,67 +80,59 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         price: '',
         description: '',
         inStock: true,
-        image: null,
-        imagePreview: ''
+        images: [null, null, null, null, null],
+        imagePreviews: ['', '', '', '', '']
       });
     }
     setErrors({});
   }, [product, isOpen]);
 
+  const handleImageUpload = (index: number, file: File | null) => {
+    const newImages = [...formData.images];
+    const newPreviews = [...formData.imagePreviews];
+    
+    newImages[index] = file;
+    
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        newPreviews[index] = e.target?.result as string;
+        setFormData(prev => ({ ...prev, imagePreviews: newPreviews }));
+      };
+      reader.readAsDataURL(file);
+    } else {
+      newPreviews[index] = '';
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      images: newImages,
+      imagePreviews: newPreviews
+    }));
+  };
+
+  const removeImage = (index: number) => {
+    handleImageUpload(index, null);
+  };
+
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.name.trim()) {
       newErrors.name = 'Product name is required';
     }
-    
+
     if (!formData.price.trim()) {
       newErrors.price = 'Price is required';
-    } else if (isNaN(Number(formData.price)) || Number(formData.price) <= 0) {
-      newErrors.price = 'Price must be a valid positive number';
+    } else {
+      const price = parseFloat(formData.price);
+      if (isNaN(price) || price <= 0) {
+        newErrors.price = 'Price must be a valid number greater than 0';
+      }
     }
-    
-    if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
-    }
-    
-    if (!product && !formData.image && !formData.imagePreview) {
-      newErrors.image = 'Product image is required';
-    }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        setErrors({ ...errors, image: 'Image size must be less than 5MB' });
-        return;
-      }
-      
-      if (!file.type.startsWith('image/')) {
-        setErrors({ ...errors, image: 'Please select a valid image file' });
-        return;
-      }
-      
-      setFormData({ ...formData, image: file });
-      
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setFormData(prev => ({ ...prev, imagePreview: e.target?.result as string }));
-      };
-      reader.readAsDataURL(file);
-      
-      // Clear image error
-      if (errors.image) {
-        const newErrors = { ...errors };
-        delete newErrors.image;
-        setErrors(newErrors);
-      }
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -133,40 +143,39 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     
     try {
       const token = localStorage.getItem('token');
-      const formDataToSend = new FormData();
-      
-      formDataToSend.append('name', formData.name);
-      formDataToSend.append('price', formData.price);
-      formDataToSend.append('description', formData.description);
-      formDataToSend.append('inStock', formData.inStock.toString());
-      
-      if (formData.image) {
-        formDataToSend.append('image', formData.image);
+      if (!token) {
+        setErrors({ general: 'Authentication required. Please login again.' });
+        setLoading(false);
+        return;
       }
       
-      const url = product 
-        ? `/api/products/${product.id}`
-        : '/api/products';
+      // Create FormData for multipart form submission
+      const formDataToSend = new FormData();
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('price', formData.price);
+      formDataToSend.append('is_available', formData.inStock.toString());
       
-      const method = product ? 'PUT' : 'POST';
-      
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: formDataToSend,
+      // Add images
+      formData.images.forEach((image, index) => {
+        if (image) {
+          formDataToSend.append(`image_${index + 1}`, image);
+        }
       });
       
-      if (response.ok) {
-        onSave();
-        onClose();
+      if (product) {
+        // Update existing product
+        await updateProduct(product.id, formDataToSend, token);
       } else {
-        const errorData = await response.json();
-        setErrors({ general: errorData.message || 'Failed to save product' });
+        // Create new product
+        await createProduct(formDataToSend, token);
       }
-    } catch (error) {
-      setErrors({ general: 'Network error. Please try again.' });
+      
+      onSave();
+      onClose();
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save product';
+      setErrors({ general: errorMessage });
     } finally {
       setLoading(false);
     }
@@ -209,93 +218,100 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           label="Price (₦)"
           type="number"
           placeholder="0.00"
+          step="0.01"
+          min="0"
           value={formData.price}
           onChange={(e) => setFormData({ ...formData, price: e.target.value })}
           error={errors.price}
-          helperText="Enter price in Nigerian Naira"
           disabled={loading}
         />
 
         {/* Description */}
         <Textarea
           label="Description"
-          placeholder="Describe your product..."
+          placeholder="Enter product description (optional)"
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          error={errors.description}
-          helperText="Provide a detailed description of your product"
+          rows={3}
           disabled={loading}
         />
 
-        {/* Image Upload */}
-        <div className="space-y-2">
+        {/* Multiple Images */}
+        <div className="space-y-4">
           <label className="block text-sm font-medium text-gray-700">
-            Product Image
+            Product Images (up to 5)
+            <span className="text-gray-500 font-normal ml-1">- Optional</span>
           </label>
           
-          {/* Image Preview */}
-          {formData.imagePreview && (
-            <div className="relative w-32 h-32 rounded-lg overflow-hidden border border-gray-200">
-              <img
-                src={formData.imagePreview}
-                alt="Product preview"
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
-          
-          {/* Upload Button */}
-          <div className="flex items-center gap-4">
-            <label className="cursor-pointer">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="hidden"
-                disabled={loading}
-              />
-              <div className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:border-gray-400 transition-colors duration-200">
-                <Upload className="w-4 h-4 text-gray-600" />
-                <span className="text-sm text-gray-700">
-                  {formData.imagePreview ? 'Change Image' : 'Upload Image'}
-                </span>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {[0, 1, 2, 3, 4].map((index) => (
+              <div key={index} className="space-y-2">
+                <div className="relative">
+                  {formData.imagePreviews[index] ? (
+                    <div className="relative group">
+                      <img
+                        src={getImageUrl(formData.imagePreviews[index])}
+                        alt={`Product image ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-lg border-2 border-gray-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        disabled={loading}
+                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-600 disabled:opacity-50"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors duration-200">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <Upload className="w-6 h-6 mb-2 text-gray-400" />
+                        <p className="text-xs text-gray-500">
+                          Image {index + 1}
+                        </p>
+                      </div>
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] || null;
+                          handleImageUpload(index, file);
+                        }}
+                        disabled={loading}
+                      />
+                    </label>
+                  )}
+                </div>
               </div>
-            </label>
-            
-            {!formData.imagePreview && (
-              <div className="flex items-center gap-2 text-gray-400">
-                <ImageIcon className="w-4 h-4" />
-                <span className="text-sm">No image selected</span>
-              </div>
-            )}
+            ))}
           </div>
           
-          {errors.image && (
-            <p className="text-sm text-red-600">{errors.image}</p>
-          )}
-          
-          <p className="text-sm text-gray-500">
-            Supported formats: JPG, PNG, GIF. Max size: 5MB
+          <p className="text-xs text-gray-500">
+            Tip: Upload high-quality images to showcase your product better. First image will be the main product image.
           </p>
         </div>
 
         {/* Stock Status */}
-        <Toggle
-          label="Product Availability"
-          checked={formData.inStock}
-          onChange={(checked) => setFormData({ ...formData, inStock: checked })}
-          disabled={loading}
-        />
-        
-        <div className="flex items-center gap-2 text-sm">
-          <div className={`w-2 h-2 rounded-full ${formData.inStock ? 'bg-green-500' : 'bg-red-500'}`} />
-          <span className={formData.inStock ? 'text-green-700' : 'text-red-700'}>
-            {formData.inStock ? 'In Stock' : 'Out of Stock'}
-          </span>
+        <div className="flex items-center justify-between">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Stock Status
+            </label>
+            <p className="text-sm text-gray-500">
+              Control whether this product appears in your storefront
+            </p>
+          </div>
+          <Toggle
+            checked={formData.inStock}
+            onChange={(checked) => setFormData({ ...formData, inStock: checked })}
+            disabled={loading}
+          />
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-3 pt-4 border-t border-gray-200">
+        {/* Form Actions */}
+        <div className="flex gap-3 pt-4">
           <Button
             type="button"
             variant="secondary"
@@ -311,10 +327,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             disabled={loading}
             className="flex-1"
           >
-            {loading 
-              ? (product ? 'Updating...' : 'Creating...') 
-              : (product ? 'Update Product' : 'Create Product')
-            }
+            {product ? 'Update Product' : 'Create Product'}
           </Button>
         </div>
       </form>

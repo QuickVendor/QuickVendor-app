@@ -1,5 +1,6 @@
 from sqlalchemy import Column, String, DateTime
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from app.core.database import Base
 import uuid
 
@@ -14,3 +15,6 @@ class User(Base):
     store_url = Column(String, unique=True, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationship with Products
+    products = relationship("Product", back_populates="owner")

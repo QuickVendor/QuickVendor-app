@@ -1,0 +1,8 @@
+# Render deployment configuration for QuickVendor Frontend
+name: quickvendor-frontend
+type: static
+buildCommand: npm install && npm run build
+staticPublishPath: dist
+
+# Environment variables to set in Render dashboard:
+# VITE_API_BASE_URL - Backend service URL

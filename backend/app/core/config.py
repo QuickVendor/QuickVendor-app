@@ -8,8 +8,8 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
-    # Database
-    DATABASE_URL: str = "sqlite:///./quickvendor.db"
+    # Database - PostgreSQL URL
+    DATABASE_URL: str = "postgresql://username:password@localhost/quickvendor"
     
     class Config:
         env_file = ".env"
