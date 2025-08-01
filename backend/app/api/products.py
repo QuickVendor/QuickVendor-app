@@ -45,7 +45,11 @@ async def create_product(
     price: float = Form(...),
     description: Optional[str] = Form(None),
     is_available: bool = Form(True),
-    image: Optional[UploadFile] = File(None),
+    image_1: Optional[UploadFile] = File(None),
+    image_2: Optional[UploadFile] = File(None),
+    image_3: Optional[UploadFile] = File(None),
+    image_4: Optional[UploadFile] = File(None),
+    image_5: Optional[UploadFile] = File(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -56,7 +60,11 @@ async def create_product(
     - **price**: Product price (required, must be > 0)
     - **description**: Product description (optional)
     - **is_available**: Product availability status (default: True)
-    - **image**: Product image file (optional)
+    - **image_1**: First product image file (optional)
+    - **image_2**: Second product image file (optional)
+    - **image_3**: Third product image file (optional)
+    - **image_4**: Fourth product image file (optional)
+    - **image_5**: Fifth product image file (optional)
     """
     # Validate price
     if price <= 0:
@@ -79,14 +87,18 @@ async def create_product(
         db.commit()
         db.refresh(new_product)
         
-        # Handle image upload if provided
-        if image and image.filename:
-            image_url = await save_uploaded_file(image, new_product.id)
-            new_product.image_url = image_url
+        # Handle multiple image uploads
+        images = [image_1, image_2, image_3, image_4, image_5]
+        for i, image in enumerate(images, 1):
+            if image and image.filename:
+                image_url = await save_uploaded_file(image, f"{new_product.id}_img{i}")
+                setattr(new_product, f'image_url_{i}', image_url)
+        
+        if any(image and image.filename for image in images):
             db.commit()
             db.refresh(new_product)
         
-        return new_product
+        return ProductResponse.from_db_model(new_product)
     except Exception as e:
         db.rollback()
         raise HTTPException(
@@ -112,7 +124,7 @@ async def get_my_products(
     Returns a list of all products created by the current user.
     """
     products = db.query(Product).filter(Product.user_id == current_user.id).all()
-    return products
+    return [ProductResponse.from_db_model(product) for product in products]
 
 
 @router.put(
@@ -130,7 +142,11 @@ async def update_product(
     price: Optional[float] = Form(None),
     description: Optional[str] = Form(None),
     is_available: Optional[bool] = Form(None),
-    image: Optional[UploadFile] = File(None),
+    image_1: Optional[UploadFile] = File(None),
+    image_2: Optional[UploadFile] = File(None),
+    image_3: Optional[UploadFile] = File(None),
+    image_4: Optional[UploadFile] = File(None),
+    image_5: Optional[UploadFile] = File(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -142,7 +158,11 @@ async def update_product(
     - **price**: Updated product price (optional, must be > 0)
     - **description**: Updated product description (optional)
     - **is_available**: Updated product availability status (optional)
-    - **image**: Updated product image file (optional)
+    - **image_1**: First product image file (optional)
+    - **image_2**: Second product image file (optional)
+    - **image_3**: Third product image file (optional)
+    - **image_4**: Fourth product image file (optional)
+    - **image_5**: Fifth product image file (optional)
     """
     # Find the product
     product = db.query(Product).filter(
@@ -173,15 +193,23 @@ async def update_product(
     if is_available is not None:
         product.is_available = is_available
     
-    # Handle image upload if provided
-    if image and image.filename:
-        image_url = await save_uploaded_file(image, product.id)
-        product.image_url = image_url
+    # Handle multiple image uploads
+    images = [image_1, image_2, image_3, image_4, image_5]
+    for i, image in enumerate(images, 1):
+        if image and image.filename:
+            # Delete old image if exists
+            old_image_url = getattr(product, f'image_url_{i}', None)
+            if old_image_url and os.path.exists(old_image_url.lstrip('/')):
+                os.remove(old_image_url.lstrip('/'))
+            
+            # Save new image
+            image_url = await save_uploaded_file(image, f"{product.id}_img{i}")
+            setattr(product, f'image_url_{i}', image_url)
     
     try:
         db.commit()
         db.refresh(product)
-        return product
+        return ProductResponse.from_db_model(product)
     except Exception as e:
         db.rollback()
         raise HTTPException(

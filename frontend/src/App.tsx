@@ -1,20 +1,24 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Store, MessageCircle, Package, ExternalLink } from 'lucide-react';
 import { AuthPage } from './components/AuthPage';
 import { VendorDashboard } from './components/VendorDashboard';
 import { StorefrontPage } from './components/StorefrontPage';
+import { ProductDetailsPage } from './components/ProductDetailsPage';
 
 function App() {
   return (
     <Routes>
+      {/* Product details route - must come before storefront route to avoid conflicts */}
+      <Route path="/store/:username/product/:productId" element={<ProductDetailsPage />} />
+      
       {/* Public storefront route */}
       <Route path="/store/:username" element={<StorefrontPage />} />
       
       {/* Auth route */}
       <Route path="/auth" element={<AuthPage />} />
       
-      {/* Vendor dashboard route - now unprotected for demo */}
+      {/* Vendor dashboard route */}
       <Route 
         path="/dashboard" 
         element={<VendorDashboard />} 
@@ -40,16 +44,10 @@ const HomePage: React.FC = () => {
             <div className="flex items-center">
               <div className="flex-shrink-0 flex items-center">
                 <Store className="w-8 h-8 text-blue-600 mr-2" />
-                <span className="text-xl font-bold text-gray-900">VendorHub</span>
+                <span className="text-xl font-bold text-gray-900">QuickVendor</span>
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <a 
-                href="/store/demo-vendor" 
-                className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors duration-200"
-              >
-                Demo Store
-              </a>
               <a 
                 href="/auth" 
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors duration-200"
@@ -80,12 +78,6 @@ const HomePage: React.FC = () => {
                 className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
               >
                 Start Selling Now
-              </a>
-              <a 
-                href="/store/demo-vendor" 
-                className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-lg text-lg font-semibold hover:border-gray-400 hover:bg-gray-50 transition-all duration-200"
-              >
-                View Demo Store
               </a>
             </div>
           </div>
@@ -195,7 +187,7 @@ const HomePage: React.FC = () => {
             Ready to Start Your Online Business?
           </h2>
           <p className="text-xl text-blue-100 mb-8">
-            Join thousands of Nigerian entrepreneurs who are already selling online with VendorHub.
+            Join thousands of Nigerian entrepreneurs who are already selling online with QuickVendor.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a 
@@ -203,12 +195,6 @@ const HomePage: React.FC = () => {
               className="bg-white text-blue-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-100 transition-all duration-200 shadow-lg hover:shadow-xl"
             >
               Create Your Store Now
-            </a>
-            <a 
-              href="/store/demo-vendor" 
-              className="border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white hover:text-blue-600 transition-all duration-200"
-            >
-              See Demo Store
             </a>
           </div>
         </div>
@@ -222,7 +208,7 @@ const HomePage: React.FC = () => {
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center mb-4">
                 <Store className="w-8 h-8 text-blue-400 mr-2" />
-                <span className="text-xl font-bold">VendorHub</span>
+                <span className="text-xl font-bold">QuickVendor</span>
               </div>
               <p className="text-gray-400 mb-4">
                 Empowering Nigerian entrepreneurs to build successful online businesses through 
@@ -235,8 +221,6 @@ const HomePage: React.FC = () => {
               <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
               <ul className="space-y-2">
                 <li><a href="/auth" className="text-gray-400 hover:text-white transition-colors duration-200">Get Started</a></li>
-                <li><a href="/store/demo-vendor" className="text-gray-400 hover:text-white transition-colors duration-200">Demo Store</a></li>
-                <li><a href="/dashboard" className="text-gray-400 hover:text-white transition-colors duration-200">Dashboard</a></li>
               </ul>
             </div>
 
@@ -253,7 +237,7 @@ const HomePage: React.FC = () => {
           
           <div className="border-t border-gray-800 mt-8 pt-8 text-center">
             <p className="text-gray-400">
-              © 2025 VendorHub. Built for Nigerian entrepreneurs.
+              © 2025 QuickVendor. Built for Nigerian entrepreneurs.
             </p>
           </div>
         </div>

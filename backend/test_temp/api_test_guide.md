@@ -119,7 +119,7 @@ http://localhost:8000
   "id": "user_29e643cc403a4f1a9f085ad3ebb7f477",
   "email": "vendor@example.com",
   "whatsapp_number": "2348012345678",
-  "store_url": "yourapp.com/vendor"
+  "store_url": null
 }
 ```
 

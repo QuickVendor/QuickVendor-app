@@ -1,0 +1,112 @@
+{
+  "test_users": [
+    {
+      "user_id": 1,
+      "profile": {
+        "name": "Sarah's Fashion Boutique",
+        "business_type": "Fashion & Accessories",
+        "description": "Trendy fashion items and accessories for modern style"
+      },
+      "registration_data": {
+        "email": "sarah.fashion@example.com",
+        "password": "fashion2024!",
+        "whatsapp_number": "2348012345678"
+      },
+      "storefront_info": {
+        "username": "sarah.fashion",
+        "storefront_url": "http://localhost:5173/store/sarah.fashion",
+        "expected_products": [
+          {
+            "name": "Designer Handbag",
+            "price": 45.99,
+            "description": "Elegant leather handbag perfect for any occasion"
+          },
+          {
+            "name": "Fashion Sunglasses",
+            "price": 25.50,
+            "description": "UV protection sunglasses with modern frames"
+          },
+          {
+            "name": "Statement Necklace",
+            "price": 18.75,
+            "description": "Bold jewelry piece to complete your outfit"
+          }
+        ]
+      }
+    },
+    {
+      "user_id": 2,
+      "profile": {
+        "name": "Mike's Electronics Hub",
+        "business_type": "Electronics & Gadgets",
+        "description": "Latest electronics and tech gadgets at competitive prices"
+      },
+      "registration_data": {
+        "email": "mike.electronics@example.com",
+        "password": "electronics2024!",
+        "whatsapp_number": "2348087654321"
+      },
+      "storefront_info": {
+        "username": "mike.electronics",
+        "storefront_url": "http://localhost:5173/store/mike.electronics",
+        "expected_products": [
+          {
+            "name": "Wireless Earbuds",
+            "price": 89.99,
+            "description": "High-quality Bluetooth earbuds with noise cancellation"
+          },
+          {
+            "name": "Smartphone Stand",
+            "price": 15.99,
+            "description": "Adjustable phone stand for desk or nightstand"
+          },
+          {
+            "name": "Power Bank 10000mAh",
+            "price": 35.50,
+            "description": "Portable charger with fast charging capability"
+          },
+          {
+            "name": "USB-C Cable 2m",
+            "price": 12.99,
+            "description": "Durable charging cable with braided design"
+          }
+        ]
+      }
+    }
+  ],
+  "testing_instructions": {
+    "setup": [
+      "1. Ensure backend server is running on http://localhost:8001",
+      "2. Ensure frontend server is running on http://localhost:5173",
+      "3. Verify .env file has correct VITE_API_BASE_URL=http://localhost:8001"
+    ],
+    "registration_steps": [
+      "1. Navigate to http://localhost:5173/auth",
+      "2. Click 'Create Account' tab",
+      "3. Fill in user details from registration_data",
+      "4. Submit form and verify successful registration",
+      "5. Login with same credentials",
+      "6. Access vendor dashboard and add sample products"
+    ],
+    "verification_steps": [
+      "1. Check if storefront URLs are accessible",
+      "2. Verify user can create, edit, and delete products",
+      "3. Test click tracking on public storefront",
+      "4. Confirm analytics dashboard shows correct data",
+      "5. Test WhatsApp integration from storefront"
+    ]
+  },
+  "curl_commands": {
+    "register_user_1": "curl -X POST \"http://localhost:8001/api/users/register\" -H \"Content-Type: application/json\" -d '{\"email\":\"sarah.fashion@example.com\",\"password\":\"fashion2024!\",\"whatsapp_number\":\"2348012345678\"}'",
+    "register_user_2": "curl -X POST \"http://localhost:8001/api/users/register\" -H \"Content-Type: application/json\" -d '{\"email\":\"mike.electronics@example.com\",\"password\":\"electronics2024!\",\"whatsapp_number\":\"2348087654321\"}'",
+    "login_user_1": "curl -X POST \"http://localhost:8001/api/auth/login\" -H \"Content-Type: application/x-www-form-urlencoded\" -d \"username=sarah.fashion@example.com&password=fashion2024!\"",
+    "login_user_2": "curl -X POST \"http://localhost:8001/api/auth/login\" -H \"Content-Type: application/x-www-form-urlencoded\" -d \"username=mike.electronics@example.com&password=electronics2024!\""
+  },
+  "notes": [
+    "Generated on July 31, 2025 for QuickVendor integration testing",
+    "These are dummy users for development and testing purposes only",
+    "WhatsApp numbers use Nigerian format (+234) but are fictional",
+    "Passwords include special characters for security testing",
+    "Email addresses use example.com domain to avoid conflicts"
+  ]
+}

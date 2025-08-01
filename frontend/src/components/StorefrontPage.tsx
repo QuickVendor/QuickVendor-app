@@ -1,13 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { PageLayout, Card, CardContent, Button } from './ui';
-import { MessageCircle, Store, Package, ExternalLink, Loader2 } from 'lucide-react';
+import { MessageCircle, Store, Package, Loader2, Eye } from 'lucide-react';
+import { getStorefrontData, trackClick } from '../apiService';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
+// Helper function to get full image URL
+const getImageUrl = (imagePath: string | null | undefined): string => {
+  if (!imagePath) {
+    return 'https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=400';
+  }
+  
+  // If it's already a full URL, return as is
+  if (imagePath.startsWith('http')) {
+    return imagePath;
+  }
+  
+  // If it's a relative path, prepend the API base URL
+  return `${API_BASE_URL}${imagePath}`;
+};
 
 interface Product {
   id: string;
   name: string;
   price: number;
-  image: string;
+  image_urls: string[];
   description: string;
   inStock: boolean;
 }
@@ -25,109 +43,71 @@ export const StorefrontPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [clickingProduct, setClickingProduct] = useState<string | null>(null);
 
-  // Mock data for demo purposes
-  const mockStorefrontData: StorefrontData = {
-    vendorName: "Demo Vendor",
-    whatsappNumber: "2348012345678",
-    products: [
-      {
-        id: "1",
-        name: "Premium Wireless Headphones",
-        price: 45000,
-        image: "https://images.pexels.com/photos/3394650/pexels-photo-3394650.jpeg?auto=compress&cs=tinysrgb&w=400",
-        description: "High-quality wireless headphones with noise cancellation and premium sound quality.",
-        inStock: true
-      },
-      {
-        id: "2",
-        name: "Smart Fitness Watch",
-        price: 32000,
-        image: "https://images.pexels.com/photos/437037/pexels-photo-437037.jpeg?auto=compress&cs=tinysrgb&w=400",
-        description: "Track your fitness goals with this advanced smartwatch featuring heart rate monitoring.",
-        inStock: true
-      },
-      {
-        id: "3",
-        name: "Portable Bluetooth Speaker",
-        price: 18000,
-        image: "https://images.pexels.com/photos/1649771/pexels-photo-1649771.jpeg?auto=compress&cs=tinysrgb&w=400",
-        description: "Compact and powerful Bluetooth speaker with crystal clear sound and long battery life.",
-        inStock: true
-      },
-      {
-        id: "4",
-        name: "Professional Camera Lens",
-        price: 125000,
-        image: "https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=400",
-        description: "Professional grade camera lens perfect for portrait and landscape photography.",
-        inStock: true
-      },
-      {
-        id: "5",
-        name: "Gaming Mechanical Keyboard",
-        price: 28000,
-        image: "https://images.pexels.com/photos/2115256/pexels-photo-2115256.jpeg?auto=compress&cs=tinysrgb&w=400",
-        description: "RGB mechanical gaming keyboard with customizable keys and premium switches.",
-        inStock: true
-      },
-      {
-        id: "6",
-        name: "Wireless Phone Charger",
-        price: 8500,
-        image: "https://images.pexels.com/photos/4526414/pexels-photo-4526414.jpeg?auto=compress&cs=tinysrgb&w=400",
-        description: "Fast wireless charging pad compatible with all Qi-enabled devices.",
-        inStock: true
-      }
-    ]
-  };
-
   useEffect(() => {
+    const fetchStorefrontData = async () => {
+      try {
+        if (!username) {
+          setError('Invalid store URL');
+          setLoading(false);
+          return;
+        }
+
+        const data = await getStorefrontData(username);
+        
+        // Transform API response to match frontend interface
+        const transformedData: StorefrontData = {
+          vendorName: data.vendor_name,
+          whatsappNumber: data.whatsapp_number,
+          products: data.products.map((product: {
+            id: string;
+            name: string;
+            price: number;
+            image_urls: string[];
+            description: string;
+            is_available: boolean;
+          }) => ({
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            image_urls: product.image_urls,
+            description: product.description,
+            inStock: product.is_available
+          }))
+        };
+        
+        setStorefront(transformedData);
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to load store';
+        
+        // Show appropriate error
+        if (errorMessage.includes('404') || errorMessage.includes('not found')) {
+          setError('Store not found');
+        } else {
+          setError('Failed to load store');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (username) {
       fetchStorefrontData();
     }
   }, [username]);
 
-  const fetchStorefrontData = async () => {
-    try {
-      // For demo purposes, use mock data if username is 'demo-vendor'
-      if (username === 'demo-vendor') {
-        setStorefront(mockStorefrontData);
-        setLoading(false);
-        return;
-      }
-      
-      const response = await fetch(`/api/store/${username}`);
-      
-      if (response.ok) {
-        const data = await response.json();
-        setStorefront(data);
-      } else if (response.status === 404) {
-        setError('Store not found');
-      } else {
-        setError('Failed to load store');
-      }
-    } catch (error) {
-      setError('Network error. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleWhatsAppClick = async (product: Product) => {
     setClickingProduct(product.id);
     
     try {
-      // Track the click
-      await fetch(`/api/products/${product.id}/track-click`, {
-        method: 'POST',
-      });
+      // First: Track the click without waiting for response (non-blocking)
+      trackClick(product.id);
       
-      // Construct WhatsApp message
+      // Second: Immediately construct WhatsApp link and open it
       const message = encodeURIComponent(
         `Hi! I'm interested in "${product.name}" for ${formatPrice(product.price)}. Is it still available?`
       );
       
-      // Open WhatsApp
+      // Open WhatsApp using vendor's whatsapp_number from API response
       const whatsappUrl = `https://wa.me/${storefront?.whatsappNumber}?text=${message}`;
       window.open(whatsappUrl, '_blank');
       
@@ -239,22 +219,26 @@ export const StorefrontPage: React.FC = () => {
             {inStockProducts.map((product) => (
               <Card key={product.id} className="group hover:shadow-lg transition-all duration-300 bg-white">
                 <CardContent className="p-0">
-                  {/* Product Image */}
-                  <div className="aspect-square bg-gray-100 rounded-t-lg overflow-hidden">
-                    <img
-                      src={product.image || 'https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=400'}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      loading="lazy"
-                    />
-                  </div>
+                  {/* Product Image - Clickable */}
+                  <Link to={`/store/${username}/product/${product.id}`} className="block">
+                    <div className="aspect-square bg-gray-100 rounded-t-lg overflow-hidden">
+                      <img
+                        src={getImageUrl(product.image_urls?.[0])}
+                        alt={product.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                    </div>
+                  </Link>
                   
                   {/* Product Details */}
                   <div className="p-4 space-y-3">
                     <div>
-                      <h3 className="font-semibold text-gray-900 text-lg mb-1 line-clamp-2">
-                        {product.name}
-                      </h3>
+                      <Link to={`/store/${username}/product/${product.id}`} className="block hover:text-blue-600 transition-colors duration-200">
+                        <h3 className="font-semibold text-gray-900 text-lg mb-1 line-clamp-2">
+                          {product.name}
+                        </h3>
+                      </Link>
                       <p className="text-gray-600 text-sm line-clamp-2">
                         {product.description}
                       </p>
@@ -271,22 +255,33 @@ export const StorefrontPage: React.FC = () => {
                       </span>
                     </div>
                     
-                    {/* WhatsApp Button */}
-                    <Button
-                      onClick={() => handleWhatsAppClick(product)}
-                      loading={clickingProduct === product.id}
-                      disabled={clickingProduct === product.id}
-                      className="w-full bg-green-600 hover:bg-green-700 focus:ring-green-500 flex items-center justify-center gap-2 py-3"
-                    >
-                      {clickingProduct === product.id ? (
-                        'Opening WhatsApp...'
-                      ) : (
-                        <>
-                          <MessageCircle className="w-4 h-4" />
-                          Chat on WhatsApp to Buy
-                        </>
-                      )}
-                    </Button>
+                    {/* Action Buttons */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <Link to={`/store/${username}/product/${product.id}`}>
+                        <Button
+                          variant="secondary"
+                          className="w-full flex items-center justify-center gap-2 py-2 text-sm"
+                        >
+                          <Eye className="w-4 h-4" />
+                          View Details
+                        </Button>
+                      </Link>
+                      <Button
+                        onClick={() => handleWhatsAppClick(product)}
+                        loading={clickingProduct === product.id}
+                        disabled={clickingProduct === product.id}
+                        className="w-full bg-green-600 hover:bg-green-700 focus:ring-green-500 flex items-center justify-center gap-2 py-2 text-sm"
+                      >
+                        {clickingProduct === product.id ? (
+                          'Opening...'
+                        ) : (
+                          <>
+                            <MessageCircle className="w-4 h-4" />
+                            Buy Now
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -298,7 +293,7 @@ export const StorefrontPage: React.FC = () => {
       {/* Footer */}
       <div className="mt-16 text-center py-8 border-t border-gray-200">
         <p className="text-gray-500 text-sm">
-          Powered by <span className="font-semibold text-gray-700">VendorApp</span>
+          Powered by <span className="font-semibold text-gray-700">QuickVendor</span>
         </p>
         <p className="text-gray-400 text-xs mt-1">
           Fast, secure, and easy online shopping

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ProductModal } from './ProductModal';
+import { getAuthenticatedUser, getProducts, deleteProduct } from '../apiService.js';
 import { 
   PageLayout, 
   PageHeader, 
@@ -19,16 +20,49 @@ import {
   ExternalLink, 
   Eye, 
   Package,
-  CheckCircle
+  CheckCircle,
+  MousePointer,
+  TrendingUp
 } from 'lucide-react';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
+// Helper function to get full image URL
+const getImageUrl = (imagePath: string | null | undefined): string => {
+  if (!imagePath) {
+    return 'https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=400';
+  }
+  
+  // If it's already a full URL, return as is
+  if (imagePath.startsWith('http')) {
+    return imagePath;
+  }
+  
+  // If it's a relative path, prepend the API base URL
+  return `${API_BASE_URL}${imagePath}`;
+};
 
 interface Product {
   id: string;
   name: string;
   price: number;
-  image: string;
+  image_urls: string[];
+  click_count: number;
+  description?: string | null;
+  is_available: boolean;
+  user_id: string;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+interface ModalProduct {
+  id: string;
+  name: string;
+  price: number;
+  image_urls: string[];
   clickCount: number;
   description?: string;
+  inStock?: boolean;
 }
 
 interface VendorData {
@@ -43,7 +77,7 @@ export const VendorDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [copySuccess, setCopySuccess] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = useState<ModalProduct | null>(null);
 
   useEffect(() => {
     fetchVendorData();
@@ -53,16 +87,17 @@ export const VendorDashboard: React.FC = () => {
   const fetchVendorData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/vendor/profile', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setVendor(data);
+      if (!token) {
+        console.error('No token found');
+        return;
       }
+      
+      const data = await getAuthenticatedUser(token);
+      setVendor({
+        username: data.email.split('@')[0], // Extract username from email
+        email: data.email,
+        storefrontUrl: `${window.location.origin}/store/${data.email.split('@')[0]}`
+      });
     } catch (error) {
       console.error('Failed to fetch vendor data:', error);
     }
@@ -71,16 +106,13 @@ export const VendorDashboard: React.FC = () => {
   const fetchProducts = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/products', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setProducts(data);
+      if (!token) {
+        console.error('No token found');
+        return;
       }
+      
+      const data = await getProducts(token);
+      setProducts(data);
     } catch (error) {
       console.error('Failed to fetch products:', error);
     } finally {
@@ -127,7 +159,17 @@ export const VendorDashboard: React.FC = () => {
   };
 
   const handleEditProduct = (product: Product) => {
-    setEditingProduct(product);
+    // Transform backend product format to frontend format for modal
+    const transformedProduct: ModalProduct = {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image_urls: product.image_urls || [],
+      clickCount: product.click_count,
+      description: product.description || '',
+      inStock: product.is_available
+    };
+    setEditingProduct(transformedProduct);
     setShowProductModal(true);
   };
 
@@ -136,18 +178,18 @@ export const VendorDashboard: React.FC = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/products/${productId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      
-      if (response.ok) {
-        setProducts(products.filter(p => p.id !== productId));
+      if (!token) {
+        console.error('No token found');
+        return;
       }
+      
+      await deleteProduct(productId, token);
+      
+      // Remove the deleted product from local state for instant UI update
+      setProducts(products.filter(p => p.id !== productId));
     } catch (error) {
       console.error('Failed to delete product:', error);
+      alert('Failed to delete product. Please try again.');
     }
   };
 
@@ -197,35 +239,156 @@ export const VendorDashboard: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex-1 min-w-0">
-              <p className="text-sm text-blue-700 mb-1">Share this link with your customers:</p>
-              <div className="bg-white border border-blue-200 rounded-lg px-4 py-3 font-mono text-sm text-gray-800 break-all">
-                {vendor?.storefrontUrl || 'yourapp.com/vendor-username'}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-blue-700 mb-1">Share this link with your customers:</p>
+                <div className="bg-white border border-blue-200 rounded-lg px-4 py-3 font-mono text-sm text-gray-800 break-all">
+                  {vendor?.storefrontUrl || 'yourapp.com/vendor-username'}
+                </div>
               </div>
+              <Button
+                onClick={copyStorefrontLink}
+                variant={copySuccess ? 'primary' : 'secondary'}
+                className={`flex items-center gap-2 transition-all duration-200 ${
+                  copySuccess ? 'bg-green-600 hover:bg-green-700' : ''
+                }`}
+              >
+                {copySuccess ? (
+                  <>
+                    <CheckCircle className="w-4 h-4" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    Copy Link
+                  </>
+                )}
+              </Button>
             </div>
-            <Button
-              onClick={copyStorefrontLink}
-              variant={copySuccess ? 'primary' : 'secondary'}
-              className={`flex items-center gap-2 transition-all duration-200 ${
-                copySuccess ? 'bg-green-600 hover:bg-green-700' : ''
-              }`}
-            >
-              {copySuccess ? (
-                <>
-                  <CheckCircle className="w-4 h-4" />
-                  Copied!
-                </>
-              ) : (
-                <>
-                  <Copy className="w-4 h-4" />
-                  Copy Link
-                </>
-              )}
-            </Button>
+            
+            {/* Quick Share Options */}
+            <div className="flex items-center gap-2 pt-2 border-t border-blue-200">
+              <span className="text-sm text-blue-700 font-medium">Quick Share:</span>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  const url = encodeURIComponent(vendor?.storefrontUrl || '');
+                  const text = encodeURIComponent(`Check out my online store! Browse my products and place orders via WhatsApp: ${vendor?.storefrontUrl}`);
+                  window.open(`https://wa.me/?text=${text}`, '_blank');
+                }}
+                className="text-green-600 border-green-300 hover:bg-green-50"
+              >
+                WhatsApp
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  const url = encodeURIComponent(vendor?.storefrontUrl || '');
+                  const text = encodeURIComponent('Check out my online store!');
+                  window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`, '_blank');
+                }}
+                className="text-blue-600 border-blue-300 hover:bg-blue-50"
+              >
+                Facebook
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  const url = encodeURIComponent(vendor?.storefrontUrl || '');
+                  const text = encodeURIComponent('Check out my online store!');
+                  window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
+                }}
+                className="text-sky-600 border-sky-300 hover:bg-sky-50"
+              >
+                Twitter
+              </Button>
+            </div>
+            
+            {/* Preview Button */}
+            <div className="pt-2">
+              <Button
+                variant="outline"
+                onClick={() => window.open(vendor?.storefrontUrl, '_blank')}
+                className="w-full flex items-center gap-2 justify-center"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Preview Your Storefront
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Analytics Summary Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Total Products */}
+        <Card className="bg-white border-l-4 border-l-blue-500">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Products</p>
+                <p className="text-2xl font-bold text-gray-900">{products.length}</p>
+              </div>
+              <Package className="w-8 h-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* In Stock Products */}
+        <Card className="bg-white border-l-4 border-l-green-500">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">In Stock</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {products.filter(p => p.is_available).length}
+                </p>
+              </div>
+              <CheckCircle className="w-8 h-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Total Clicks */}
+        <Card className="bg-white border-l-4 border-l-purple-500">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Clicks</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {products.reduce((sum, product) => sum + product.click_count, 0)}
+                </p>
+              </div>
+              <MousePointer className="w-8 h-8 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Top Product */}
+        <Card className="bg-white border-l-4 border-l-orange-500">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Top Product</p>
+                <p className="text-lg font-bold text-gray-900 truncate">
+                  {products.length > 0 
+                    ? products.reduce((top, product) => 
+                        product.click_count > top.click_count ? product : top
+                      ).name
+                    : 'No products'
+                  }
+                </p>
+              </div>
+              <TrendingUp className="w-8 h-8 text-orange-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Products Section */}
       <div className="space-y-6">
@@ -267,7 +430,7 @@ export const VendorDashboard: React.FC = () => {
                   {/* Product Image */}
                   <div className="aspect-square bg-gray-100 rounded-t-lg overflow-hidden">
                     <img
-                      src={product.image || 'https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=400'}
+                      src={getImageUrl(product.image_urls?.[0])}
                       alt={product.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
@@ -285,7 +448,7 @@ export const VendorDashboard: React.FC = () => {
                       </span>
                       <div className="flex items-center gap-1 text-sm text-gray-600">
                         <Eye className="w-4 h-4" />
-                        <span>{product.clickCount} clicks</span>
+                        <span>{product.click_count} clicks</span>
                       </div>
                     </div>
                     
@@ -293,7 +456,7 @@ export const VendorDashboard: React.FC = () => {
                     <div className="mb-4">
                       <span className="inline-flex items-center gap-1 bg-green-100 text-green-800 text-xs font-medium px-2.5 py-1 rounded-full">
                         <Eye className="w-3 h-3" />
-                        Interest Clicks: {product.clickCount}
+                        Interest Clicks: {product.click_count}
                       </span>
                     </div>
                     

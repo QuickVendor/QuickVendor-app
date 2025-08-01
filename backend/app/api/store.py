@@ -49,15 +49,23 @@ async def get_public_storefront(
     ).all()
     
     # Convert products to public response format
-    public_products = [
-        PublicProductResponse(
+    public_products = []
+    for product in available_products:
+        # Collect all image URLs
+        image_urls = []
+        for i in range(1, 6):
+            image_url = getattr(product, f'image_url_{i}', None)
+            if image_url:
+                image_urls.append(image_url)
+        
+        public_products.append(PublicProductResponse(
             id=product.id,
             name=product.name,
             price=product.price,
-            image_url=product.image_url
-        )
-        for product in available_products
-    ]
+            image_urls=image_urls,
+            description=product.description,
+            is_available=product.is_available
+        ))
     
     # Extract vendor name from email (part before @)
     vendor_name = user.email.split('@')[0].replace('.', ' ').replace('_', ' ').replace('-', ' ').title()

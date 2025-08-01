@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 
@@ -42,7 +42,7 @@ class ProductResponse(BaseModel):
     name: str
     description: str | None = None
     price: float
-    image_url: str | None = None
+    image_urls: List[str] = []
     is_available: bool
     click_count: int
     user_id: str
@@ -51,6 +51,28 @@ class ProductResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+    @classmethod
+    def from_db_model(cls, product):
+        """Convert database model to response model with image_urls list"""
+        image_urls = []
+        for i in range(1, 6):  # Check image_url_1 through image_url_5
+            image_url = getattr(product, f'image_url_{i}', None)
+            if image_url:
+                image_urls.append(image_url)
+        
+        return cls(
+            id=product.id,
+            name=product.name,
+            description=product.description,
+            price=product.price,
+            image_urls=image_urls,
+            is_available=product.is_available,
+            click_count=product.click_count,
+            user_id=product.user_id,
+            created_at=product.created_at,
+            updated_at=product.updated_at
+        )
         schema_extra = {
             "example": {
                 "id": "product_abc123",

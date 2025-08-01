@@ -6,7 +6,9 @@ class PublicProductResponse(BaseModel):
     id: str
     name: str
     price: float
-    image_url: str | None = None
+    image_urls: List[str] = []
+    description: str | None = None
+    is_available: bool = True
 
     class Config:
         from_attributes = True
@@ -15,7 +17,9 @@ class PublicProductResponse(BaseModel):
                 "id": "product_uuid_1",
                 "name": "Cool T-Shirt",
                 "price": 5000,
-                "image_url": "/path/to/image.jpg"
+                "image_urls": ["/path/to/image1.jpg", "/path/to/image2.jpg"],
+                "description": "Comfortable cotton t-shirt in various colors",
+                "is_available": True
             }
         }
 
@@ -35,7 +39,9 @@ class StorefrontResponse(BaseModel):
                         "id": "product_uuid_1",
                         "name": "Cool T-Shirt",
                         "price": 5000,
-                        "image_url": "/path/to/image.jpg"
+                        "image_urls": ["/path/to/image1.jpg", "/path/to/image2.jpg"],
+                        "description": "Comfortable cotton t-shirt in various colors",
+                        "is_available": True
                     }
                 ]
             }

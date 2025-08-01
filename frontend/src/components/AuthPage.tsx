@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent } from './ui';
-import { User, Lock, Phone, ArrowRight } from 'lucide-react';
+import { User, ArrowRight, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { login, register } from '../apiService.js';
 
 interface LoginData {
   email: string;
@@ -17,6 +18,8 @@ export const AuthPage: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
   
   const [loginData, setLoginData] = useState<LoginData>({
     email: '',
@@ -58,25 +61,25 @@ export const AuthPage: React.FC = () => {
     if (!validateForm()) return;
     
     setLoading(true);
+    setErrors({});
+    
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(loginData),
-      });
+      const response = await login(loginData.email, loginData.password);
       
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('token', data.token);
-        window.location.href = '/dashboard';
-      } else {
-        const errorData = await response.json();
-        setErrors({ general: errorData.message || 'Login failed' });
-      }
+      // Save access token to localStorage
+      localStorage.setItem('token', response.access_token);
+      
+      // Redirect to dashboard
+      window.location.href = '/dashboard';
     } catch (error) {
-      setErrors({ general: 'Network error. Please try again.' });
+      // Handle specific error cases
+      const errorMessage = error instanceof Error ? error.message : 'Login failed';
+      
+      if (errorMessage.includes('Incorrect email or password') || errorMessage.includes('401')) {
+        setErrors({ general: 'Invalid credentials.' });
+      } else {
+        setErrors({ general: errorMessage });
+      }
     } finally {
       setLoading(false);
     }
@@ -87,25 +90,29 @@ export const AuthPage: React.FC = () => {
     if (!validateForm()) return;
     
     setLoading(true);
+    setErrors({});
+    
     try {
-      const response = await fetch('/api/users/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(signupData),
-      });
+      // Call register API function
+      await register(signupData.email, signupData.password, signupData.whatsappNumber);
       
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('token', data.token);
-        window.location.href = '/dashboard';
-      } else {
-        const errorData = await response.json();
-        setErrors({ general: errorData.message || 'Registration failed' });
-      }
+      // Auto-login after successful registration
+      const loginResponse = await login(signupData.email, signupData.password);
+      
+      // Save access token to localStorage
+      localStorage.setItem('token', loginResponse.access_token);
+      
+      // Redirect to dashboard
+      window.location.href = '/dashboard';
     } catch (error) {
-      setErrors({ general: 'Network error. Please try again.' });
+      // Handle specific error cases
+      const errorMessage = error instanceof Error ? error.message : 'Registration failed';
+      
+      if (errorMessage.includes('Email already registered') || errorMessage.includes('Email already exists') || errorMessage.includes('409')) {
+        setErrors({ general: 'Email already exists.' });
+      } else {
+        setErrors({ general: errorMessage });
+      }
     } finally {
       setLoading(false);
     }
@@ -120,7 +127,16 @@ export const AuthPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md relative">
+        {/* Back Button */}
+        <button
+          onClick={() => window.location.href = '/'}
+          className="absolute -top-12 left-0 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors duration-200 group"
+        >
+          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform duration-200" />
+          <span className="text-sm font-medium">Back to Home</span>
+        </button>
+
         {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
@@ -185,14 +201,24 @@ export const AuthPage: React.FC = () => {
                   error={errors.email}
                 />
                 
-                <Input
-                  label="Password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={loginData.password}
-                  onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                  error={errors.password}
-                />
+                <div className="relative">
+                  <Input
+                    label="Password"
+                    type={showLoginPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    value={loginData.password}
+                    onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                    error={errors.password}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-9 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
+                    onClick={() => setShowLoginPassword(!showLoginPassword)}
+                  >
+                    {showLoginPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
                 
                 <Button
                   type="submit"
@@ -216,15 +242,25 @@ export const AuthPage: React.FC = () => {
                   error={errors.email}
                 />
                 
-                <Input
-                  label="Password"
-                  type="password"
-                  placeholder="Create a password"
-                  value={signupData.password}
-                  onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
-                  error={errors.password}
-                  helperText="Must be at least 8 characters"
-                />
+                <div className="relative">
+                  <Input
+                    label="Password"
+                    type={showSignupPassword ? "text" : "password"}
+                    placeholder="Create a password"
+                    value={signupData.password}
+                    onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
+                    error={errors.password}
+                    helperText="Must be at least 8 characters"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-9 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
+                    onClick={() => setShowSignupPassword(!showSignupPassword)}
+                  >
+                    {showSignupPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
                 
                 <Input
                   label="WhatsApp Number"
