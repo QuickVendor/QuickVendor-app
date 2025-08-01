@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+import os
 
 from app.core.database import engine, Base
 from app.api import users, auth, products, store
@@ -15,19 +16,44 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Configure CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173", 
-        "http://localhost:5174", 
-        "http://localhost:5175",  # Added new frontend port
-        "http://localhost:3000"
-    ],  # Frontend URLs
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Configure CORS - include production URLs
+allowed_origins = [
+    "http://localhost:5173", 
+    "http://localhost:5174", 
+    "http://localhost:5175",
+    "http://localhost:3000"
+]
+
+# Add production frontend URL if available
+if os.getenv("FRONTEND_URL"):
+    allowed_origins.append(os.getenv("FRONTEND_URL"))
+
+# Add common Render frontend patterns - allow all Render subdomains for flexibility
+allowed_origins.extend([
+    "https://*.onrender.com",
+    "https://quickvendor-frontend.onrender.com",
+    "https://quickvendor-app.onrender.com"
+])
+
+# In production, also allow the specific domain patterns
+if os.getenv("ENVIRONMENT") == "production":
+    # Allow all HTTPS origins ending with .onrender.com
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origin_regex=r"https://.*\.onrender\.com",
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    # Development CORS
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=allowed_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 # Include routers
 app.include_router(

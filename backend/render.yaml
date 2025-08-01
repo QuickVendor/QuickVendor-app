@@ -1,0 +1,12 @@
+# Render deployment configuration for QuickVendor Backend
+name: quickvendor-backend
+type: web
+runtime: python3
+buildCommand: pip install -r requirements.txt
+startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+healthCheckPath: /api/health
+
+# Environment variables to set in Render dashboard:
+# DATABASE_URL - PostgreSQL connection string
+# SECRET_KEY - JWT secret key (32+ characters)
+# ENVIRONMENT - production

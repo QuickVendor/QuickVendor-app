@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ProductModal } from './ProductModal';
-import { getAuthenticatedUser, getProducts, deleteProduct } from '../apiService.js';
+import { authenticatedApiCall } from '../config/api';
 import { 
   PageLayout, 
   PageHeader, 

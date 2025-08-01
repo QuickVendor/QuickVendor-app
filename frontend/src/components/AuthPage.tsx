@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent } from './ui';
 import { User, ArrowRight, Eye, EyeOff, ArrowLeft } from 'lucide-react';
-import { login, register } from '../apiService.js';
+import { apiCall } from '../config/api';
 
 interface LoginData {
   email: string;
@@ -64,22 +64,24 @@ export const AuthPage: React.FC = () => {
     setErrors({});
     
     try {
-      const response = await login(loginData.email, loginData.password);
+      const response = await apiCall('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: loginData.email,
+          password: loginData.password
+        }),
+      });
       
-      // Save access token to localStorage
-      localStorage.setItem('token', response.access_token);
-      
-      // Redirect to dashboard
-      window.location.href = '/dashboard';
-    } catch (error) {
-      // Handle specific error cases
-      const errorMessage = error instanceof Error ? error.message : 'Login failed';
-      
-      if (errorMessage.includes('Incorrect email or password') || errorMessage.includes('401')) {
-        setErrors({ general: 'Invalid credentials.' });
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem('token', data.access_token);
+        window.location.href = '/dashboard';
       } else {
-        setErrors({ general: errorMessage });
+        const errorData = await response.json();
+        setErrors({ general: errorData.detail || 'Login failed' });
       }
+    } catch (error) {
+      setErrors({ general: 'Network error. Please try again.' });
     } finally {
       setLoading(false);
     }
@@ -93,26 +95,44 @@ export const AuthPage: React.FC = () => {
     setErrors({});
     
     try {
-      // Call register API function
-      await register(signupData.email, signupData.password, signupData.whatsappNumber);
+      // Register user
+      const registerResponse = await apiCall('/api/users/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: signupData.email,
+          password: signupData.password,
+          whatsapp_number: signupData.whatsappNumber
+        }),
+      });
+      
+      if (!registerResponse.ok) {
+        const errorData = await registerResponse.json();
+        if (registerResponse.status === 409) {
+          setErrors({ general: 'Email already exists.' });
+        } else {
+          setErrors({ general: errorData.detail || 'Registration failed' });
+        }
+        return;
+      }
       
       // Auto-login after successful registration
-      const loginResponse = await login(signupData.email, signupData.password);
+      const loginResponse = await apiCall('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: signupData.email,
+          password: signupData.password
+        }),
+      });
       
-      // Save access token to localStorage
-      localStorage.setItem('token', loginResponse.access_token);
-      
-      // Redirect to dashboard
-      window.location.href = '/dashboard';
-    } catch (error) {
-      // Handle specific error cases
-      const errorMessage = error instanceof Error ? error.message : 'Registration failed';
-      
-      if (errorMessage.includes('Email already registered') || errorMessage.includes('Email already exists') || errorMessage.includes('409')) {
-        setErrors({ general: 'Email already exists.' });
+      if (loginResponse.ok) {
+        const loginData = await loginResponse.json();
+        localStorage.setItem('token', loginData.access_token);
+        window.location.href = '/dashboard';
       } else {
-        setErrors({ general: errorMessage });
+        setErrors({ general: 'Registration successful, but login failed. Please try logging in.' });
       }
+    } catch (error) {
+      setErrors({ general: 'Network error. Please try again.' });
     } finally {
       setLoading(false);
     }
