@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Union
+from typing import List
 
 
 class PublicProductResponse(BaseModel):
@@ -7,11 +7,11 @@ class PublicProductResponse(BaseModel):
     name: str
     price: float
     image_urls: List[str] = []
-    description: Union[str, None] = None
+    description: str | None = None
     is_available: bool = True
 
     class Config:
-        orm_mode = True
+        from_attributes = True
         schema_extra = {
             "example": {
                 "id": "product_uuid_1",
