@@ -24,6 +24,8 @@ export const Toggle: React.FC<ToggleProps> = ({
         type="button"
         onClick={() => !disabled && onChange(!checked)}
         disabled={disabled}
+        aria-label={`Toggle ${label}`}
+        title={`Toggle ${label}`}
         className={`
           relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out
           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2

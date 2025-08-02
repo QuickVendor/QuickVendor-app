@@ -257,6 +257,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                         type="button"
                         onClick={() => removeImage(index)}
                         disabled={loading}
+                        aria-label={`Remove image ${index + 1}`}
+                        title={`Remove image ${index + 1}`}
                         className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-600 disabled:opacity-50"
                       >
                         <X className="w-4 h-4" />
