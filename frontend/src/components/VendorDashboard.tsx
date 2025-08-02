@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ProductModal } from './ProductModal';
 import { getAuthenticatedUser, getProducts, deleteProduct } from '../config/api';
 import { API_BASE_URL } from '../config/api';
