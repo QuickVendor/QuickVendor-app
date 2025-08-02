@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ProductModal } from './ProductModal';
-import { authenticatedApiCall } from '../config/api';
+import { getAuthenticatedUser, getProducts, deleteProduct } from '../config/api';
+import { API_BASE_URL } from '../config/api';
 import { 
   PageLayout, 
   PageHeader, 
@@ -24,8 +25,6 @@ import {
   MousePointer,
   TrendingUp
 } from 'lucide-react';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 // Helper function to get full image URL
 const getImageUrl = (imagePath: string | null | undefined): string => {
@@ -275,7 +274,6 @@ export const VendorDashboard: React.FC = () => {
                 variant="secondary"
                 size="sm"
                 onClick={() => {
-                  const url = encodeURIComponent(vendor?.storefrontUrl || '');
                   const text = encodeURIComponent(`Check out my online store! Browse my products and place orders via WhatsApp: ${vendor?.storefrontUrl}`);
                   window.open(`https://wa.me/?text=${text}`, '_blank');
                 }}

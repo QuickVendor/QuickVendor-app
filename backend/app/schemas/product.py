@@ -9,8 +9,8 @@ class ProductCreateRequest(BaseModel):
     price: float = Field(..., gt=0)
     is_available: bool = True
 
-    class Config:
-        schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "name": "Premium Coffee Beans",
                 "description": "High-quality arabica coffee beans from Ethiopia",
@@ -18,6 +18,7 @@ class ProductCreateRequest(BaseModel):
                 "is_available": True
             }
         }
+    }
 
 
 class ProductUpdateRequest(BaseModel):
@@ -26,8 +27,8 @@ class ProductUpdateRequest(BaseModel):
     price: Optional[float] = Field(None, gt=0)
     is_available: Optional[bool] = None
 
-    class Config:
-        schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "name": "Updated Product Name",
                 "description": "Updated description",
@@ -35,6 +36,7 @@ class ProductUpdateRequest(BaseModel):
                 "is_available": True
             }
         }
+    }
 
 
 class ProductResponse(BaseModel):
@@ -49,8 +51,7 @@ class ProductResponse(BaseModel):
     created_at: datetime
     updated_at: datetime | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
     @classmethod
     def from_db_model(cls, product):

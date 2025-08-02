@@ -7,27 +7,29 @@ class UserRegisterRequest(BaseModel):
     password: str = Field(..., min_length=8)
     whatsapp_number: str = Field(..., pattern="^[0-9]{10,15}$")
 
-    class Config:
-        schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "email": "vendor@example.com",
                 "password": "strongpassword123",
                 "whatsapp_number": "2348012345678"
             }
         }
+    }
 
 
 class UserRegisterResponse(BaseModel):
     id: str
     email: str
 
-    class Config:
-        schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "id": "user_uuid",
                 "email": "vendor@example.com"
             }
         }
+    }
 
 
 class ErrorResponse(BaseModel):
@@ -40,5 +42,4 @@ class UserProfile(BaseModel):
     whatsapp_number: str
     store_url: str | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
