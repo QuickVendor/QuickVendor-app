@@ -1,11 +1,11 @@
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional, Union
+from typing import Optional
 
 
 class UserRegisterRequest(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8)
-    whatsapp_number: str = Field(..., regex="^[0-9]{10,15}$")
+    whatsapp_number: str = Field(..., pattern="^[0-9]{10,15}$")
 
     class Config:
         schema_extra = {
@@ -38,7 +38,7 @@ class UserProfile(BaseModel):
     id: str
     email: str
     whatsapp_number: str
-    store_url: Union[str, None] = None
+    store_url: str | None = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True

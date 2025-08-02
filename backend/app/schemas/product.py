@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List, Union
+from typing import Optional, List
 from datetime import datetime
 
 
@@ -40,17 +40,17 @@ class ProductUpdateRequest(BaseModel):
 class ProductResponse(BaseModel):
     id: str
     name: str
-    description: Union[str, None] = None
+    description: str | None = None
     price: float
     image_urls: List[str] = []
     is_available: bool
     click_count: int
     user_id: str
     created_at: datetime
-    updated_at: Union[datetime, None] = None
+    updated_at: datetime | None = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
     @classmethod
     def from_db_model(cls, product):
