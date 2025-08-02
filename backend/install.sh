@@ -10,7 +10,8 @@ pip install --upgrade pip
 echo "==> Installing with only binary packages (no compilation)"
 pip install --only-binary=all --upgrade fastapi==0.115.6
 pip install --only-binary=all --upgrade "uvicorn[standard]==0.32.1"
-pip install --only-binary=all --upgrade pydantic==2.10.4
+pip install --only-binary=all --upgrade "pydantic[email]==2.10.4"
+pip install --only-binary=all --upgrade email-validator==2.1.1
 pip install --only-binary=all --upgrade pydantic-settings==2.7.0
 pip install --only-binary=all --upgrade python-multipart==0.0.18
 pip install --only-binary=all --upgrade "passlib[bcrypt]==1.7.4"
