@@ -1,5 +1,5 @@
 // API Configuration for QuickVendor Frontend
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'production' ? 'https://quickvendor-backend.onrender.com' : 'http://localhost:8000');
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'production' ? 'https://quickvendor-app.onrender.com' : 'http://localhost:8000');
 
 // Export the configured API base URL
 export { API_BASE_URL };
