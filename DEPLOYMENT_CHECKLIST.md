@@ -13,6 +13,11 @@
   - Added runtime.txt (Python 3.11.10)
   - Updated dependencies with pre-compiled wheels
   - Enhanced build command with pip upgrade
+- [x] **MIGRATION: Complete Pydantic v1 migration**
+  - Downgraded to FastAPI 0.95.2 + Pydantic 1.10.12
+  - Updated all schemas for v1 compatibility
+  - Eliminated Rust compilation requirements
+  - Uses battle-tested stable versions
 
 ## 📋 Next Steps: Deploy to Render
 
