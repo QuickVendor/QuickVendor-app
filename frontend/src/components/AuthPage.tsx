@@ -80,7 +80,7 @@ export const AuthPage: React.FC = () => {
         const errorData = await response.json();
         setErrors({ general: errorData.detail || 'Login failed' });
       }
-    } catch (error) {
+    } catch {
       setErrors({ general: 'Network error. Please try again.' });
     } finally {
       setLoading(false);
@@ -131,7 +131,7 @@ export const AuthPage: React.FC = () => {
       } else {
         setErrors({ general: 'Registration successful, but login failed. Please try logging in.' });
       }
-    } catch (error) {
+    } catch {
       setErrors({ general: 'Network error. Please try again.' });
     } finally {
       setLoading(false);

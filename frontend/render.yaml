@@ -1,8 +1,17 @@
-# Render deployment configuration for QuickVendor Frontend
-name: quickvendor-frontend
-type: static
-buildCommand: rm -rf node_modules package-lock.json && npm install && npm run build
-staticPublishPath: dist
-
-# Environment variables to set in Render dashboard:
-# VITE_API_BASE_URL - Backend service URL
+services:
+  - type: web
+    name: quickvendor-frontend
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: NODE_VERSION
+        value: 20.18.0

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ProductModal } from './ProductModal';
-import { authenticatedApiCall } from '../config/api';
+import { getAuthenticatedUser, getProducts, deleteProduct } from '../config/api';
 import { 
   PageLayout, 
   PageHeader, 
@@ -275,7 +275,6 @@ export const VendorDashboard: React.FC = () => {
                 variant="secondary"
                 size="sm"
                 onClick={() => {
-                  const url = encodeURIComponent(vendor?.storefrontUrl || '');
                   const text = encodeURIComponent(`Check out my online store! Browse my products and place orders via WhatsApp: ${vendor?.storefrontUrl}`);
                   window.open(`https://wa.me/?text=${text}`, '_blank');
                 }}
