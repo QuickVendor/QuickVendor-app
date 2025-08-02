@@ -1,7 +1,7 @@
 # Render deployment configuration for QuickVendor Frontend
 name: quickvendor-frontend
 type: static
-buildCommand: npm install && npm run build
+buildCommand: rm -rf node_modules package-lock.json && npm install && npm run build
 staticPublishPath: dist
 
 # Environment variables to set in Render dashboard:
