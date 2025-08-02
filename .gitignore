@@ -19,3 +19,25 @@ logs/
 # Environment variables (keep local copies only)
 .env.local
 .env.*.local
+
+# Build artifacts
+dist/
+build/
+
+# Dependencies
+node_modules/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# SQLite databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploads directory contents (keep directory structure)
+backend/uploads/*
+!backend/uploads/.gitkeep
