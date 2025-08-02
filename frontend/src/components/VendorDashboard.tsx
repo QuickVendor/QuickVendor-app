@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ProductModal } from './ProductModal';
 import { getAuthenticatedUser, getProducts, deleteProduct } from '../config/api';
+import { API_BASE_URL } from '../config/api';
 import { 
   PageLayout, 
   PageHeader, 
@@ -24,8 +25,6 @@ import {
   MousePointer,
   TrendingUp
 } from 'lucide-react';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 // Helper function to get full image URL
 const getImageUrl = (imagePath: string | null | undefined): string => {

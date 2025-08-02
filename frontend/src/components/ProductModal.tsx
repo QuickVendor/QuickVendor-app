@@ -3,8 +3,7 @@ import { Button, Input, Textarea, Toggle } from './ui';
 import { Modal } from './ui/Modal';
 import { Upload, X } from 'lucide-react';
 import { createProduct, updateProduct } from '../apiService';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+import { API_BASE_URL } from '../config/api';
 
 // Helper function to get full image URL
 const getImageUrl = (imagePath: string | null | undefined): string => {
@@ -304,6 +303,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             </p>
           </div>
           <Toggle
+            label="In Stock"
             checked={formData.inStock}
             onChange={(checked) => setFormData({ ...formData, inStock: checked })}
             disabled={loading}

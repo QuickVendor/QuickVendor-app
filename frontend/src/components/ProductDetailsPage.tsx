@@ -3,8 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { PageLayout, Button, Card, CardContent } from './ui';
 import { ArrowLeft, MessageCircle, Eye, Store, Loader2, ChevronLeft, ChevronRight, Package } from 'lucide-react';
 import { getStorefrontData, trackClick } from '../apiService';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+import { API_BASE_URL } from '../config/api';
 
 // Helper function to get full image URL
 const getImageUrl = (imagePath: string | null | undefined): string => {

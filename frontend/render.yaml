@@ -2,12 +2,21 @@ services:
   - type: web
     name: quickvendor-frontend
     runtime: static
-    buildCommand: rm -rf node_modules && npm ci && npm run build
+    buildCommand: |
+      node --version &&
+      npm --version &&
+      rm -rf node_modules dist &&
+      npm cache clean --force &&
+      npm ci --no-optional &&
+      npm run build
     staticPublishPath: ./dist
     headers:
       - path: /*
         name: X-Frame-Options
         value: SAMEORIGIN
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
     routes:
       - type: rewrite
         source: /*
@@ -15,3 +24,5 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 20.18.0
+      - key: NODE_ENV
+        value: production
