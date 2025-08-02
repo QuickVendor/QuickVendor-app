@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { Store, MessageCircle, Package, ExternalLink } from 'lucide-react';
 import { AuthPage } from './components/AuthPage';
 import { VendorDashboard } from './components/VendorDashboard';
@@ -28,6 +28,9 @@ function App() {
         path="/" 
         element={<HomePage />} 
       />
+      
+      {/* Catch all route - redirect to home */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
