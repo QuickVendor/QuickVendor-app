@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Union
 
 
 class Token(BaseModel):
@@ -7,4 +8,4 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
-    email: str | None = None
+    email: Union[str, None] = None
