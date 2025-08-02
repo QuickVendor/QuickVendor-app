@@ -22,7 +22,7 @@ export const authenticatedApiCall = async (endpoint: string, options: RequestIni
 
 // New functions
 export const getAuthenticatedUser = async (token: string) => {
-  const response = await authenticatedApiCall('/api/auth/user', { headers: { 'Authorization': `Bearer ${token}` }, });
+  const response = await authenticatedApiCall('/api/users/me', { headers: { 'Authorization': `Bearer ${token}` }, });
   if (response.ok) {
     return response.json();
   }
