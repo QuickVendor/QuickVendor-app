@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# QuickVendor Deployment Verification Script
-# This script tests the key endpoints to verify the network error fixes
+# QuickVendor Complete Deployment Verification Script
+# Tests both backend API and frontend routing functionality
 
-echo "🔍 QuickVendor Deployment Verification"
-echo "======================================"
+echo "🔍 QuickVendor Complete Deployment Verification"
+echo "=============================================="
 
 # Test 1: Backend Health Check
 echo ""
@@ -66,6 +66,26 @@ reg_response_body=$(echo "$register_response" | sed '/HTTP_CODE:/d')
 if [[ $reg_http_code == "201" ]]; then
     echo "✅ Registration successful (HTTP $reg_http_code)"
     echo "   Response: $reg_response_body"
+    
+    # Test 5: Auto-login after registration
+    echo ""
+    echo "5️⃣ Testing Auto-Login Flow..."
+    login_test_response=$(curl -s -w "\nHTTP_CODE:%{http_code}" \
+        -X POST https://quickvendor-app.onrender.com/api/auth/login \
+        -H "Content-Type: application/json" \
+        -d "{\"email\": \"$test_email\", \"password\": \"testpassword123\"}")
+    
+    login_test_code=$(echo "$login_test_response" | grep "HTTP_CODE:" | cut -d: -f2)
+    login_test_body=$(echo "$login_test_response" | sed '/HTTP_CODE:/d')
+    
+    if [[ $login_test_code == "200" ]] && [[ $login_test_body == *"access_token"* ]]; then
+        echo "✅ Auto-login flow working (HTTP $login_test_code)"
+        echo "   Access token received successfully"
+    else
+        echo "❌ Auto-login flow failed (HTTP $login_test_code)"
+        echo "   Response: $login_test_body"
+    fi
+    
 elif [[ $reg_http_code == "409" ]]; then
     echo "⚠️  Registration endpoint working - email already exists (HTTP $reg_http_code)"
 else
@@ -73,9 +93,9 @@ else
     echo "   Response: $reg_response_body"
 fi
 
-# Test 5: Frontend Accessibility
+# Test 6: Frontend Accessibility
 echo ""
-echo "5️⃣ Testing Frontend Accessibility..."
+echo "6️⃣ Testing Frontend Accessibility..."
 frontend_response=$(curl -s -o /dev/null -w "%{http_code}" https://quick-vendor-app.onrender.com/)
 if [[ $frontend_response == "200" ]]; then
     echo "✅ Frontend is accessible (HTTP $frontend_response)"
@@ -83,8 +103,31 @@ else
     echo "❌ Frontend accessibility issue (HTTP $frontend_response)"
 fi
 
+# Test 7: Frontend Routes Test
+echo ""
+echo "7️⃣ Testing Frontend SPA Routes..."
+auth_route_response=$(curl -s -o /dev/null -w "%{http_code}" https://quick-vendor-app.onrender.com/auth)
+dashboard_route_response=$(curl -s -o /dev/null -w "%{http_code}" https://quick-vendor-app.onrender.com/dashboard)
+
+if [[ $auth_route_response == "200" ]]; then
+    echo "✅ Auth route accessible (HTTP $auth_route_response)"
+else
+    echo "❌ Auth route issue (HTTP $auth_route_response)"
+fi
+
+if [[ $dashboard_route_response == "200" ]]; then
+    echo "✅ Dashboard route accessible (HTTP $dashboard_route_response)"
+else
+    echo "❌ Dashboard route issue (HTTP $dashboard_route_response)"
+fi
+
 echo ""
 echo "🎯 Verification Complete!"
 echo ""
-echo "If all tests show ✅, the network error should be resolved."
-echo "If any tests show ❌, those issues need to be addressed."
+echo "📊 SUMMARY:"
+echo "- Backend API: $([ $http_code == "401" ] && echo "✅ Working" || echo "❌ Issues")"
+echo "- CORS Config: $([ $cors_response == "200" ] && echo "✅ Working" || echo "❌ Issues")" 
+echo "- Registration: $([ $reg_http_code == "201" ] || [ $reg_http_code == "409" ] && echo "✅ Working" || echo "❌ Issues")"
+echo "- Frontend: $([ $frontend_response == "200" ] && echo "✅ Working" || echo "❌ Issues")"
+echo ""
+echo "$([ $http_code == "401" ] && [ $cors_response == "200" ] && ([ $reg_http_code == "201" ] || [ $reg_http_code == "409" ]) && [ $frontend_response == "200" ] && echo "🎉 ALL SYSTEMS OPERATIONAL! Ready for production use! 🚀" || echo "⚠️  Some issues detected. Check the logs above.")"
