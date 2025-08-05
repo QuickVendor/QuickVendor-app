@@ -25,9 +25,24 @@ export const apiCall = async (endpoint: string, options: RequestInit = {}) => {
 
 // Helper for authenticated API calls (now uses cookies instead of headers)
 export const authenticatedApiCall = async (endpoint: string, options: RequestInit = {}) => {
+  // TEMPORARY DEBUG: Get fallback token from localStorage if available
+  const debugToken = localStorage.getItem('temp_debug_token');
+  
+  // Prepare headers with potential Authorization fallback
+  const headers: Record<string, string> = {
+    ...(options.headers as Record<string, string> || {})
+  };
+  
+  // If we have a debug token, include it as Authorization header for fallback
+  if (debugToken) {
+    headers['Authorization'] = `Bearer ${debugToken}`;
+    console.log('Using debug token from localStorage as fallback');
+  }
+  
   return apiCall(endpoint, { 
     ...options,
-    credentials: 'include', // Ensure cookies are sent
+    headers,
+    credentials: 'include', // Ensure cookies are sent (primary method)
   });
 };
 
