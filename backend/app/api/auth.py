@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -19,6 +19,7 @@ class LoginRequest(BaseModel):
 @router.post("/login", response_model=Token)
 async def login_for_access_token(
     login_data: LoginRequest,
+    response: Response,
     db: Session = Depends(get_db)
 ):
     # Check for existing user
@@ -34,4 +35,31 @@ async def login_for_access_token(
     access_token = create_access_token(
         data={"sub": user.email}
     )
+    
+    # Set secure HTTP-only cookie
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=True,  # Only send over HTTPS in production
+        samesite="lax",  # Provides CSRF protection while allowing some cross-site usage
+        max_age=60*60*24*7,  # 7 days
+        path="/"
+    )
+    
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.post("/logout")
+async def logout(response: Response):
+    """
+    Logout user by clearing the authentication cookie.
+    """
+    response.delete_cookie(
+        key="access_token",
+        path="/",
+        secure=True,
+        httponly=True,
+        samesite="lax"
+    )
+    return {"message": "Successfully logged out"}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProductModal } from './ProductModal';
-import { getAuthenticatedUser, getProducts, deleteProduct } from '../config/api';
+import { getAuthenticatedUser, getProducts, deleteProduct, logout } from '../config/api';
 import { API_BASE_URL } from '../config/api';
 import { 
   PageLayout, 
@@ -87,13 +87,7 @@ export const VendorDashboard: React.FC = () => {
 
   const fetchVendorData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        console.error('No token found');
-        return;
-      }
-      
-      const data = await getAuthenticatedUser(token);
+      const data = await getAuthenticatedUser();
       setVendor({
         username: data.email.split('@')[0], // Extract username from email
         email: data.email,
@@ -106,13 +100,7 @@ export const VendorDashboard: React.FC = () => {
 
   const fetchProducts = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        console.error('No token found');
-        return;
-      }
-      
-      const data = await getProducts(token);
+      const data = await getProducts();
       setProducts(data);
     } catch (error) {
       console.error('Failed to fetch products:', error);
@@ -127,17 +115,10 @@ export const VendorDashboard: React.FC = () => {
 
   const handleLogout = async () => {
     try {
-      const token = localStorage.getItem('token');
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      await logout();
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      localStorage.removeItem('token');
       navigate('/');
     }
   };
@@ -178,13 +159,7 @@ export const VendorDashboard: React.FC = () => {
     if (!confirm('Are you sure you want to delete this product?')) return;
     
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        console.error('No token found');
-        return;
-      }
-      
-      await deleteProduct(productId, token);
+      await deleteProduct(productId);
       
       // Remove the deleted product from local state for instant UI update
       setProducts(products.filter(p => p.id !== productId));
