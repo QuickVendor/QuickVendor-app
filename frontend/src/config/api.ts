@@ -8,7 +8,11 @@ export { API_BASE_URL };
 export const apiCall = async (endpoint: string, options: RequestInit = {}) => {
   const url = `${API_BASE_URL}${endpoint}`;
   const defaultHeaders = { 'Content-Type': 'application/json', 'Accept': 'application/json', };
-  const config: RequestInit = { ...options, headers: { ...defaultHeaders, ...options.headers, }, };
+  const config: RequestInit = { 
+    ...options, 
+    headers: { ...defaultHeaders, ...options.headers, },
+    credentials: 'include', // Always include cookies for authentication
+  };
   
   console.log(`Making API call to: ${url}`, { method: config.method || 'GET', headers: config.headers });
   
@@ -19,33 +23,42 @@ export const apiCall = async (endpoint: string, options: RequestInit = {}) => {
   return response;
 };
 
-// Helper for authenticated API calls
+// Helper for authenticated API calls (now uses cookies instead of headers)
 export const authenticatedApiCall = async (endpoint: string, options: RequestInit = {}) => {
-  const token = localStorage.getItem('token');
-  const authHeaders: Record<string, string> = token ? { 'Authorization': `Bearer ${token}`, } : {};
-  return apiCall(endpoint, { ...options, headers: { ...authHeaders, ...options.headers, }, });
+  return apiCall(endpoint, { 
+    ...options,
+    credentials: 'include', // Ensure cookies are sent
+  });
 };
 
-// New functions
-export const getAuthenticatedUser = async (token: string) => {
-  const response = await authenticatedApiCall('/api/users/me', { headers: { 'Authorization': `Bearer ${token}` }, });
+// New functions - now using cookies for authentication
+export const getAuthenticatedUser = async () => {
+  const response = await authenticatedApiCall('/api/users/me');
   if (response.ok) {
     return response.json();
   }
   throw new Error('Failed to fetch authenticated user');
 };
 
-export const getProducts = async (token: string) => {
-  const response = await authenticatedApiCall('/api/products', { headers: { 'Authorization': `Bearer ${token}` }, });
+export const getProducts = async () => {
+  const response = await authenticatedApiCall('/api/products');
   if (response.ok) {
     return response.json();
   }
   throw new Error('Failed to fetch products');
 };
 
-export const deleteProduct = async (productId: string, token: string) => {
-  const response = await authenticatedApiCall(`/api/products/${productId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }, });
+export const deleteProduct = async (productId: string) => {
+  const response = await authenticatedApiCall(`/api/products/${productId}`, { method: 'DELETE' });
   if (!response.ok) {
     throw new Error('Failed to delete product');
   }
+};
+
+export const logout = async () => {
+  const response = await apiCall('/api/auth/logout', { method: 'POST' });
+  if (!response.ok) {
+    throw new Error('Failed to logout');
+  }
+  return response.json();
 };

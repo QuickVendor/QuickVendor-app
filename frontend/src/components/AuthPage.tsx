@@ -75,8 +75,8 @@ export const AuthPage: React.FC = () => {
       });
       
       if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('token', data.access_token);
+        // Token is now set as HTTP-only cookie by the server
+        // No need to store in localStorage
         navigate('/dashboard');
       } else {
         const errorData = await response.json();
@@ -132,8 +132,8 @@ export const AuthPage: React.FC = () => {
       });
       
       if (loginResponse.ok) {
-        const loginData = await loginResponse.json();
-        localStorage.setItem('token', loginData.access_token);
+        // Token is now set as HTTP-only cookie by the server
+        // No need to store in localStorage
         navigate('/dashboard');
       } else {
         setErrors({ general: 'Registration successful, but login failed. Please try logging in.' });
