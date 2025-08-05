@@ -75,8 +75,17 @@ export const AuthPage: React.FC = () => {
       });
       
       if (response.ok) {
-        // Token is now set as HTTP-only cookie by the server
-        // No need to store in localStorage
+        const data = await response.json();
+        console.log('Login response:', data); // Debug log
+        
+        // TEMPORARY DEBUG: Store token in localStorage as fallback while debugging cookies
+        if (data.access_token) {
+          localStorage.setItem('temp_debug_token', data.access_token);
+          console.log('Stored debug token in localStorage');
+        }
+        
+        // Token is set as HTTP-only cookie by the server
+        // No need to store in localStorage normally
         navigate('/dashboard');
       } else {
         const errorData = await response.json();
@@ -132,8 +141,16 @@ export const AuthPage: React.FC = () => {
       });
       
       if (loginResponse.ok) {
-        // Token is now set as HTTP-only cookie by the server
-        // No need to store in localStorage
+        const data = await loginResponse.json();
+        console.log('Signup auto-login response:', data); // Debug log
+        
+        // TEMPORARY DEBUG: Store token in localStorage as fallback
+        if (data.access_token) {
+          localStorage.setItem('temp_debug_token', data.access_token);
+          console.log('Stored debug token in localStorage after signup');
+        }
+        
+        // Token is set as HTTP-only cookie by the server
         navigate('/dashboard');
       } else {
         setErrors({ general: 'Registration successful, but login failed. Please try logging in.' });

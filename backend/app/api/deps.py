@@ -16,12 +16,18 @@ def get_token_from_request(request: Request, token: Optional[str] = Depends(oaut
     """Get token from either Authorization header or cookie."""
     # First try to get from Authorization header
     if token:
+        print(f"DEBUG: Found token in Authorization header: {token[:20]}...")
         return token
     
     # Then try to get from cookie
     cookie_token = request.cookies.get("access_token")
     if cookie_token:
+        print(f"DEBUG: Found token in cookie: {cookie_token[:20]}...")
         return cookie_token
+    
+    # Debug info
+    print(f"DEBUG: No token found. Cookies: {request.cookies}")
+    print(f"DEBUG: Headers: {dict(request.headers)}")
     
     # If no token found, raise exception
     raise HTTPException(
