@@ -9,7 +9,13 @@ export const apiCall = async (endpoint: string, options: RequestInit = {}) => {
   const url = `${API_BASE_URL}${endpoint}`;
   const defaultHeaders = { 'Content-Type': 'application/json', 'Accept': 'application/json', };
   const config: RequestInit = { ...options, headers: { ...defaultHeaders, ...options.headers, }, };
+  
+  console.log(`Making API call to: ${url}`, { method: config.method || 'GET', headers: config.headers });
+  
   const response = await fetch(url, config);
+  
+  console.log(`API response status: ${response.status} for ${url}`);
+  
   return response;
 };
 

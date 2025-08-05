@@ -32,28 +32,27 @@ if os.getenv("FRONTEND_URL"):
 allowed_origins.extend([
     "https://*.onrender.com",
     "https://quickvendor-frontend.onrender.com",
-    "https://quickvendor-app.onrender.com"
+    "https://quickvendor-app.onrender.com",
+    "https://quick-vendor-app.onrender.com"  # Add the actual frontend URL
 ])
 
-# In production, also allow the specific domain patterns
-if os.getenv("ENVIRONMENT") == "production":
-    # Allow all HTTPS origins ending with .onrender.com
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origin_regex=r"https://.*\.onrender\.com",
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-else:
-    # Development CORS
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=allowed_origins,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+# Single CORS configuration - combining all origins
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173", 
+        "http://localhost:5174", 
+        "http://localhost:5175",
+        "http://localhost:3000",
+        "https://quick-vendor-app.onrender.com",
+        "https://quickvendor-app.onrender.com",
+        "https://quickvendor-frontend.onrender.com"
+    ],
+    allow_origin_regex=r"https://.*\.onrender\.com",
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+)
 
 # Include routers
 app.include_router(
