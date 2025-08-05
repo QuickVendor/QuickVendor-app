@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, Link } from 'react-router-dom';
 import { Store, MessageCircle, Package, ExternalLink } from 'lucide-react';
 import { AuthPage } from './components/AuthPage';
 import { VendorDashboard } from './components/VendorDashboard';
@@ -50,12 +50,12 @@ const HomePage: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <a 
-                href="/auth" 
+              <Link 
+                to="/auth" 
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors duration-200"
               >
                 Get Started
-              </a>
+              </Link>
             </div>
           </div>
         </div>
@@ -75,12 +75,12 @@ const HomePage: React.FC = () => {
               No technical skills required.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a 
-                href="/auth" 
+              <Link 
+                to="/auth" 
                 className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
               >
                 Start Selling Now
-              </a>
+              </Link>
             </div>
           </div>
         </div>
@@ -192,12 +192,12 @@ const HomePage: React.FC = () => {
             Join thousands of Nigerian entrepreneurs who are already selling online with QuickVendor.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a 
-              href="/auth" 
+            <Link 
+              to="/auth" 
               className="bg-white text-blue-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-100 transition-all duration-200 shadow-lg hover:shadow-xl"
             >
               Create Your Store Now
-            </a>
+            </Link>
           </div>
         </div>
       </section>
@@ -222,7 +222,7 @@ const HomePage: React.FC = () => {
             <div>
               <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
               <ul className="space-y-2">
-                <li><a href="/auth" className="text-gray-400 hover:text-white transition-colors duration-200">Get Started</a></li>
+                <li><Link to="/auth" className="text-gray-400 hover:text-white transition-colors duration-200">Get Started</Link></li>
               </ul>
             </div>
 
