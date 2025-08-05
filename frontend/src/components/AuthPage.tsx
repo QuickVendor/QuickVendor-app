@@ -80,8 +80,13 @@ export const AuthPage: React.FC = () => {
         const errorData = await response.json();
         setErrors({ general: errorData.detail || 'Login failed' });
       }
-    } catch {
-      setErrors({ general: 'Network error. Please try again.' });
+    } catch (error) {
+      console.error('Login error:', error);
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        setErrors({ general: 'Unable to connect to server. Please check your internet connection and try again.' });
+      } else {
+        setErrors({ general: 'Network error. Please try again.' });
+      }
     } finally {
       setLoading(false);
     }
@@ -131,8 +136,13 @@ export const AuthPage: React.FC = () => {
       } else {
         setErrors({ general: 'Registration successful, but login failed. Please try logging in.' });
       }
-    } catch {
-      setErrors({ general: 'Network error. Please try again.' });
+    } catch (error) {
+      console.error('Signup error:', error);
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        setErrors({ general: 'Unable to connect to server. Please check your internet connection and try again.' });
+      } else {
+        setErrors({ general: 'Network error. Please try again.' });
+      }
     } finally {
       setLoading(false);
     }
