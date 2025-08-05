@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ProductModal } from './ProductModal';
 import { getAuthenticatedUser, getProducts, deleteProduct } from '../config/api';
 import { API_BASE_URL } from '../config/api';
@@ -71,6 +72,7 @@ interface VendorData {
 }
 
 export const VendorDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [vendor, setVendor] = useState<VendorData | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -136,7 +138,7 @@ export const VendorDashboard: React.FC = () => {
       console.error('Logout error:', error);
     } finally {
       localStorage.removeItem('token');
-      window.location.href = '/';
+      navigate('/');
     }
   };
 

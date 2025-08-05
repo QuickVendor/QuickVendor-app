@@ -4,6 +4,7 @@ import { AuthPage } from './components/AuthPage';
 import { VendorDashboard } from './components/VendorDashboard';
 import { StorefrontPage } from './components/StorefrontPage';
 import { ProductDetailsPage } from './components/ProductDetailsPage';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -20,7 +21,11 @@ function App() {
       {/* Vendor dashboard route */}
       <Route 
         path="/dashboard" 
-        element={<VendorDashboard />} 
+        element={
+          <ProtectedRoute>
+            <VendorDashboard />
+          </ProtectedRoute>
+        } 
       />
       
       {/* Default route */}

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent } from './ui';
 import { User, ArrowRight, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { apiCall } from '../config/api';
@@ -15,6 +16,7 @@ interface SignupData {
 }
 
 export const AuthPage: React.FC = () => {
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -75,7 +77,7 @@ export const AuthPage: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         localStorage.setItem('token', data.access_token);
-        window.location.href = '/dashboard';
+        navigate('/dashboard');
       } else {
         const errorData = await response.json();
         setErrors({ general: errorData.detail || 'Login failed' });
@@ -132,7 +134,7 @@ export const AuthPage: React.FC = () => {
       if (loginResponse.ok) {
         const loginData = await loginResponse.json();
         localStorage.setItem('token', loginData.access_token);
-        window.location.href = '/dashboard';
+        navigate('/dashboard');
       } else {
         setErrors({ general: 'Registration successful, but login failed. Please try logging in.' });
       }
@@ -160,7 +162,7 @@ export const AuthPage: React.FC = () => {
       <div className="w-full max-w-md relative">
         {/* Back Button */}
         <button
-          onClick={() => window.location.href = '/'}
+          onClick={() => navigate('/')}
           className="absolute -top-12 left-0 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors duration-200 group"
         >
           <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform duration-200" />
