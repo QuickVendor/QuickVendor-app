@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+import os
 
 from app.core.database import get_db
 from app.core.security import verify_password, create_access_token
@@ -36,18 +37,30 @@ async def login_for_access_token(
         data={"sub": user.email}
     )
     
-    # Set secure HTTP-only cookie
+    # Set secure HTTP-only cookie with environment-aware settings
+    is_production = os.getenv("RENDER") is not None or os.getenv("ENVIRONMENT") == "production"
+    
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=True,  # Only send over HTTPS in production
-        samesite="lax",  # Provides CSRF protection while allowing some cross-site usage
+        secure=is_production,  # Only require HTTPS in production
+        samesite="lax",  # Use lax for better cross-site compatibility
         max_age=60*60*24*7,  # 7 days
-        path="/"
+        path="/",
+        domain=None  # Let browser handle domain automatically
     )
     
-    return {"access_token": access_token, "token_type": "bearer"}
+    # Also include token in response body for debugging/fallback
+    return {
+        "access_token": access_token, 
+        "token_type": "bearer",
+        "debug_info": {
+            "cookie_set": True,
+            "production": is_production,
+            "secure": is_production
+        }
+    }
 
 
 @router.post("/logout")
@@ -55,11 +68,28 @@ async def logout(response: Response):
     """
     Logout user by clearing the authentication cookie.
     """
+    is_production = os.getenv("RENDER") is not None or os.getenv("ENVIRONMENT") == "production"
+    
     response.delete_cookie(
         key="access_token",
         path="/",
-        secure=True,
+        secure=is_production,
         httponly=True,
-        samesite="lax"
+        samesite="none" if is_production else "lax",
+        domain=None
     )
     return {"message": "Successfully logged out"}
+
+
+@router.get("/debug")
+async def debug_auth(request: Request):
+    """Debug endpoint to check cookie and header values."""
+    cookies = dict(request.cookies)
+    headers = dict(request.headers)
+    
+    return {
+        "cookies": cookies,
+        "headers": {k: v for k, v in headers.items() if k.lower() in ['authorization', 'cookie', 'origin', 'user-agent']},
+        "access_token_cookie": request.cookies.get("access_token"),
+        "authorization_header": headers.get("authorization")
+    }
