@@ -5,8 +5,13 @@ import logging
 import uuid
 from typing import Callable
 
+try:
+    import sentry_sdk
+    SENTRY_AVAILABLE = True
+except ImportError:
+    SENTRY_AVAILABLE = False
+
 from app.core.sentry import set_request_context, capture_custom_error, add_breadcrumb
-import sentry_sdk
 
 
 class SentryMiddleware:
@@ -31,18 +36,19 @@ class SentryMiddleware:
         path = scope.get("path", "")
         
         # Set Sentry context
-        with sentry_sdk.configure_scope() as sentry_scope:
-            sentry_scope.set_tag("request_id", request_id)
-            sentry_scope.set_tag("method", method)
-            sentry_scope.set_tag("path", path)
-            
-            # Add breadcrumb for request start
-            add_breadcrumb(
-                message=f"Request started: {method} {path}",
-                category="request",
-                level="info",
-                data={"request_id": request_id}
-            )
+        if SENTRY_AVAILABLE:
+            with sentry_sdk.configure_scope() as sentry_scope:
+                sentry_scope.set_tag("request_id", request_id)
+                sentry_scope.set_tag("method", method)
+                sentry_scope.set_tag("path", path)
+        
+        # Add breadcrumb for request start
+        add_breadcrumb(
+            message=f"Request started: {method} {path}",
+            category="request",
+            level="info",
+            data={"request_id": request_id}
+        )
         
         try:
             await self.app(scope, receive, send)
@@ -87,11 +93,12 @@ async def log_requests_middleware(request: Request, call_next):
     request_id = str(uuid.uuid4())[:8]
     
     # Add request info to Sentry scope
-    with sentry_sdk.configure_scope() as scope:
-        scope.set_tag("request_id", request_id)
-        scope.set_extra("request_url", str(request.url))
-        scope.set_extra("request_method", request.method)
-        scope.set_extra("user_agent", request.headers.get("user-agent", ""))
+    if SENTRY_AVAILABLE:
+        with sentry_sdk.configure_scope() as scope:
+            scope.set_tag("request_id", request_id)
+            scope.set_extra("request_url", str(request.url))
+            scope.set_extra("request_method", request.method)
+            scope.set_extra("user_agent", request.headers.get("user-agent", ""))
     
     # Log request start
     logging.info(f"Request {request_id}: {request.method} {request.url.path}")

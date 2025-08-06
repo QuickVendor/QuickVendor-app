@@ -1,17 +1,27 @@
-import sentry_sdk
-from sentry_sdk.integrations.fastapi import FastApiIntegration
-from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
-from sentry_sdk.integrations.logging import LoggingIntegration
-from sentry_sdk.integrations.asyncio import AsyncioIntegration
 import logging
 import os
-from typing import Optional
+from typing import Optional, Any, Dict
+
+try:
+    import sentry_sdk
+    from sentry_sdk.integrations.fastapi import FastApiIntegration
+    from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+    from sentry_sdk.integrations.logging import LoggingIntegration
+    from sentry_sdk.integrations.asyncio import AsyncioIntegration
+    SENTRY_AVAILABLE = True
+except ImportError:
+    SENTRY_AVAILABLE = False
+    logging.warning("Sentry SDK not available - error monitoring disabled")
 
 from app.core.config import settings
 
 
 def init_sentry() -> None:
     """Initialize Sentry error monitoring and performance tracking."""
+    
+    if not SENTRY_AVAILABLE:
+        logging.info("Sentry SDK not available, skipping initialization")
+        return
     
     if not settings.SENTRY_DSN:
         logging.info("Sentry DSN not configured, skipping Sentry initialization")
@@ -98,6 +108,9 @@ def before_send_filter(event, hint):
 
 def set_user_context(user_id: str, email: Optional[str] = None) -> None:
     """Set user context for Sentry tracking."""
+    if not SENTRY_AVAILABLE:
+        return
+    
     with sentry_sdk.configure_scope() as scope:
         scope.set_user({
             "id": user_id,
@@ -107,14 +120,21 @@ def set_user_context(user_id: str, email: Optional[str] = None) -> None:
 
 def set_request_context(path: str, method: str, user_id: Optional[str] = None) -> None:
     """Set request context for better error tracking."""
+    if not SENTRY_AVAILABLE:
+        return
+    
     with sentry_sdk.configure_scope() as scope:
         scope.set_tag("endpoint", f"{method} {path}")
         if user_id:
             scope.set_tag("user_id", user_id)
 
 
-def capture_custom_error(error: Exception, context: dict = None) -> str:
+def capture_custom_error(error: Exception, context: dict = None) -> Optional[str]:
     """Capture a custom error with additional context."""
+    if not SENTRY_AVAILABLE:
+        logging.error(f"Error (Sentry unavailable): {error}", exc_info=True)
+        return None
+    
     with sentry_sdk.configure_scope() as scope:
         if context:
             for key, value in context.items():
@@ -123,8 +143,12 @@ def capture_custom_error(error: Exception, context: dict = None) -> str:
         return sentry_sdk.capture_exception(error)
 
 
-def capture_message_with_context(message: str, level: str = "info", context: dict = None) -> str:
+def capture_message_with_context(message: str, level: str = "info", context: dict = None) -> Optional[str]:
     """Capture a message with additional context."""
+    if not SENTRY_AVAILABLE:
+        logging.log(getattr(logging, level.upper(), logging.INFO), f"Sentry message: {message}")
+        return None
+    
     with sentry_sdk.configure_scope() as scope:
         if context:
             for key, value in context.items():
@@ -135,6 +159,9 @@ def capture_message_with_context(message: str, level: str = "info", context: dic
 
 def add_breadcrumb(message: str, category: str = "custom", level: str = "info", data: dict = None) -> None:
     """Add a breadcrumb for better error context."""
+    if not SENTRY_AVAILABLE:
+        return
+    
     sentry_sdk.add_breadcrumb(
         message=message,
         category=category,
