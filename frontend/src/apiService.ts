@@ -39,14 +39,24 @@ export const trackClick = async (productId: string) => {
 };
 
 /**
- * Create new product
+ * Create new product - now uses cookie-based authentication
  */
-export const createProduct = async (formData: FormData, token: string) => {
+export const createProduct = async (formData: FormData) => {
+  // Get debug token from localStorage for Authorization header fallback
+  const debugToken = localStorage.getItem('temp_debug_token');
+  
+  const headers: Record<string, string> = {};
+  
+  // Add Authorization header as fallback if debug token exists
+  if (debugToken) {
+    headers['Authorization'] = `Bearer ${debugToken}`;
+    console.log('Creating product with debug token as fallback');
+  }
+  
   const response = await fetch(`${API_BASE_URL}/api/products`, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
+    headers,
+    credentials: 'include', // Send cookies for authentication
     body: formData
   });
 
@@ -59,14 +69,24 @@ export const createProduct = async (formData: FormData, token: string) => {
 };
 
 /**
- * Update existing product
+ * Update existing product - now uses cookie-based authentication
  */
-export const updateProduct = async (productId: string, formData: FormData, token: string) => {
+export const updateProduct = async (productId: string, formData: FormData) => {
+  // Get debug token from localStorage for Authorization header fallback
+  const debugToken = localStorage.getItem('temp_debug_token');
+  
+  const headers: Record<string, string> = {};
+  
+  // Add Authorization header as fallback if debug token exists
+  if (debugToken) {
+    headers['Authorization'] = `Bearer ${debugToken}`;
+    console.log('Updating product with debug token as fallback');
+  }
+  
   const response = await fetch(`${API_BASE_URL}/api/products/${productId}`, {
     method: 'PUT',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
+    headers,
+    credentials: 'include', // Send cookies for authentication
     body: formData
   });
 
