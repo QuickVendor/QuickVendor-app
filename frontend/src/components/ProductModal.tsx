@@ -139,15 +139,9 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     if (!validateForm()) return;
     
     setLoading(true);
+    setErrors({});
     
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setErrors({ general: 'Authentication required. Please login again.' });
-        setLoading(false);
-        return;
-      }
-      
       // Create FormData for multipart form submission
       const formDataToSend = new FormData();
       formDataToSend.append('name', formData.name);
@@ -163,11 +157,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       });
       
       if (product) {
-        // Update existing product
-        await updateProduct(product.id, formDataToSend, token);
+        // Update existing product - now uses cookie-based authentication
+        await updateProduct(product.id, formDataToSend);
       } else {
-        // Create new product
-        await createProduct(formDataToSend, token);
+        // Create new product - now uses cookie-based authentication
+        await createProduct(formDataToSend);
       }
       
       onSave();

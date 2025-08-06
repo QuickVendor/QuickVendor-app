@@ -19,6 +19,13 @@ def get_token_from_request(request: Request, token: Optional[str] = Depends(oaut
         print(f"DEBUG: Found token in Authorization header: {token[:20]}...")
         return token
     
+    # For multipart requests, OAuth2PasswordBearer might not work, so check headers directly
+    auth_header = request.headers.get("authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        header_token = auth_header.replace("Bearer ", "")
+        print(f"DEBUG: Found token in direct header check: {header_token[:20]}...")
+        return header_token
+    
     # Then try to get from cookie
     cookie_token = request.cookies.get("access_token")
     if cookie_token:
@@ -26,8 +33,9 @@ def get_token_from_request(request: Request, token: Optional[str] = Depends(oaut
         return cookie_token
     
     # Debug info
-    print(f"DEBUG: No token found. Cookies: {request.cookies}")
-    print(f"DEBUG: Headers: {dict(request.headers)}")
+    print(f"DEBUG: No token found. Cookies: {dict(request.cookies)}")
+    print(f"DEBUG: Authorization header: {request.headers.get('authorization', 'None')}")
+    print(f"DEBUG: All headers: {dict(request.headers)}")
     
     # If no token found, raise exception
     raise HTTPException(

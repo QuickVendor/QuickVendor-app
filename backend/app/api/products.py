@@ -27,7 +27,8 @@ async def save_uploaded_file(file: UploadFile, product_id: str) -> str:
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         
-        return f"/{file_path}"
+        # Return path relative to the server root for proper URL construction
+        return f"/uploads/{filename}"
     return None
 
 
