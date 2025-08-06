@@ -28,7 +28,7 @@ Sentry.init({
 const SentryErrorBoundary = Sentry.withErrorBoundary(
   ({ children }: { children: React.ReactNode }) => <>{children}</>,
   {
-    fallback: ErrorFallback,
+    fallback: (errorData) => <ErrorFallback {...errorData} />,
     showDialog: false,
   }
 );

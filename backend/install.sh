@@ -20,8 +20,8 @@ pip install --only-binary=all --upgrade sqlalchemy==2.0.36
 pip install --only-binary=all --upgrade python-dotenv==1.0.1
 pip install --only-binary=all --upgrade psycopg2-binary==2.9.10
 
-echo "==> Attempting to install Sentry SDK (optional)"
-pip install --only-binary=all --upgrade "sentry-sdk[fastapi]==2.19.2" || echo "Sentry SDK installation failed - continuing without monitoring"
+echo "==> Installing Sentry SDK for production monitoring"
+pip install --only-binary=all --upgrade "sentry-sdk[fastapi]==2.19.2"
 
 echo "==> Installation complete"
 pip list
