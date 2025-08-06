@@ -1,30 +1,51 @@
-import { Routes, Route, Navigate, Link } from 'react-router-dom';
+import { Routes, Route, Navigate, Link, useLocation, useNavigationType } from 'react-router-dom';
 import { Store, MessageCircle, Package, ExternalLink } from 'lucide-react';
 import * as Sentry from '@sentry/react';
+import { useEffect } from 'react';
 import { AuthPage } from './components/AuthPage';
 import { VendorDashboard } from './components/VendorDashboard';
 import { StorefrontPage } from './components/StorefrontPage';
 import { ProductDetailsPage } from './components/ProductDetailsPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
-// Create Sentry-enhanced React Router components
-const SentryRoutes = Sentry.withSentryRouting(Routes);
-const SentryRoute = Sentry.withSentryRouting(Route);
+// Modern Sentry routing integration using useLocation
+const SentryRoutes: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const location = useLocation();
+  const navigationType = useNavigationType();
+
+  useEffect(() => {
+    // Modern Sentry v10+ React Router integration
+    // The browserTracingIntegration() in main.tsx already handles route performance tracking
+    // We can add custom context for better route identification
+    Sentry.setContext('navigation', {
+      pathname: location.pathname,
+      search: location.search,
+      hash: location.hash,
+      state: location.state,
+      navigationType: navigationType,
+    });
+
+    // Set a custom tag for the current route
+    Sentry.setTag('route', location.pathname);
+  }, [location, navigationType]);
+
+  return <Routes>{children}</Routes>;
+};
 
 function App() {
   return (
     <SentryRoutes>
       {/* Product details route - must come before storefront route to avoid conflicts */}
-      <SentryRoute path="/store/:username/product/:productId" element={<ProductDetailsPage />} />
+      <Route path="/store/:username/product/:productId" element={<ProductDetailsPage />} />
       
       {/* Public storefront route */}
-      <SentryRoute path="/store/:username" element={<StorefrontPage />} />
+      <Route path="/store/:username" element={<StorefrontPage />} />
       
       {/* Auth route */}
-      <SentryRoute path="/auth" element={<AuthPage />} />
+      <Route path="/auth" element={<AuthPage />} />
       
       {/* Vendor dashboard route */}
-      <SentryRoute 
+      <Route 
         path="/dashboard" 
         element={
           <ProtectedRoute>
@@ -34,13 +55,13 @@ function App() {
       />
       
       {/* Default route */}
-      <SentryRoute 
+      <Route 
         path="/" 
         element={<HomePage />} 
       />
       
       {/* Catch all route - redirect to home */}
-      <SentryRoute path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </SentryRoutes>
   );
 }
