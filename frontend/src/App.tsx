@@ -1,25 +1,30 @@
 import { Routes, Route, Navigate, Link } from 'react-router-dom';
 import { Store, MessageCircle, Package, ExternalLink } from 'lucide-react';
+import * as Sentry from '@sentry/react';
 import { AuthPage } from './components/AuthPage';
 import { VendorDashboard } from './components/VendorDashboard';
 import { StorefrontPage } from './components/StorefrontPage';
 import { ProductDetailsPage } from './components/ProductDetailsPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
+// Create Sentry-enhanced React Router components
+const SentryRoutes = Sentry.withSentryRouting(Routes);
+const SentryRoute = Sentry.withSentryRouting(Route);
+
 function App() {
   return (
-    <Routes>
+    <SentryRoutes>
       {/* Product details route - must come before storefront route to avoid conflicts */}
-      <Route path="/store/:username/product/:productId" element={<ProductDetailsPage />} />
+      <SentryRoute path="/store/:username/product/:productId" element={<ProductDetailsPage />} />
       
       {/* Public storefront route */}
-      <Route path="/store/:username" element={<StorefrontPage />} />
+      <SentryRoute path="/store/:username" element={<StorefrontPage />} />
       
       {/* Auth route */}
-      <Route path="/auth" element={<AuthPage />} />
+      <SentryRoute path="/auth" element={<AuthPage />} />
       
       {/* Vendor dashboard route */}
-      <Route 
+      <SentryRoute 
         path="/dashboard" 
         element={
           <ProtectedRoute>
@@ -29,14 +34,14 @@ function App() {
       />
       
       {/* Default route */}
-      <Route 
+      <SentryRoute 
         path="/" 
         element={<HomePage />} 
       />
       
       {/* Catch all route - redirect to home */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      <SentryRoute path="*" element={<Navigate to="/" replace />} />
+    </SentryRoutes>
   );
 }
 

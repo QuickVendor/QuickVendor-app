@@ -3,10 +3,12 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 import os
+import logging
 
 from app.core.database import get_db
 from app.core.security import verify_password, create_access_token
 from app.core.config import settings
+from app.core.sentry import set_user_context, add_breadcrumb, capture_message_with_context
 from app.models.user import User
 from app.schemas.auth import Token
 
@@ -24,14 +26,42 @@ async def login_for_access_token(
     response: Response,
     db: Session = Depends(get_db)
 ):
+    # Add breadcrumb for login attempt
+    add_breadcrumb(
+        message=f"Login attempt for email: {login_data.email}",
+        category="auth",
+        level="info",
+        data={"email": login_data.email}
+    )
+    
     # Check for existing user
     user = db.query(User).filter(User.email == login_data.email).first()
     if not user or not verify_password(login_data.password, user.hashed_password):
+        # Log failed login attempt
+        logging.warning(f"Failed login attempt for email: {login_data.email}")
+        add_breadcrumb(
+            message="Login failed - invalid credentials",
+            category="auth",
+            level="warning",
+            data={"email": login_data.email}
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    
+    # Set user context in Sentry
+    set_user_context(user_id=str(user.id), email=user.email)
+    
+    # Log successful login
+    logging.info(f"Successful login for user: {user.email}")
+    add_breadcrumb(
+        message="User login successful",
+        category="auth",
+        level="info",
+        data={"user_id": str(user.id), "email": user.email}
+    )
     
     # Create JWT token
     access_token = create_access_token(
@@ -84,6 +114,13 @@ async def logout(response: Response):
     """
     Logout user by clearing the authentication cookie.
     """
+    # Add logout breadcrumb
+    add_breadcrumb(
+        message="User logout initiated",
+        category="auth",
+        level="info"
+    )
+    
     is_production = os.getenv("RENDER") is not None or os.getenv("ENVIRONMENT") == "production"
     
     response.delete_cookie(
@@ -94,6 +131,10 @@ async def logout(response: Response):
         samesite="none" if is_production else "lax",
         domain=None
     )
+    
+    # Log successful logout
+    logging.info("User logged out successfully")
+    
     return {"message": "Successfully logged out"}
 
 

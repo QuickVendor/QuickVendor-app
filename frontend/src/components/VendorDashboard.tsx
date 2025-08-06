@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProductModal } from './ProductModal';
+import { SentryTest } from './SentryTest';
 import { getAuthenticatedUser, getProducts, deleteProduct, logout } from '../config/api';
 import { API_BASE_URL } from '../config/api';
 import { 
@@ -364,6 +365,11 @@ export const VendorDashboard: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Sentry Testing Section (Development Only) */}
+      {import.meta.env.MODE === 'development' && (
+        <SentryTest className="mb-8" />
+      )}
 
       {/* Products Section */}
       <div className="space-y-6">
