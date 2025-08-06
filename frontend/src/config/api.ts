@@ -37,13 +37,25 @@ export const authenticatedApiCall = async (endpoint: string, options: RequestIni
   if (debugToken) {
     headers['Authorization'] = `Bearer ${debugToken}`;
     console.log('Using debug token from localStorage as fallback');
+  } else {
+    console.log('No debug token found, relying on cookies only');
   }
   
-  return apiCall(endpoint, { 
+  console.log('Making authenticated API call:', { endpoint, hasDebugToken: !!debugToken });
+  
+  const response = await apiCall(endpoint, { 
     ...options,
     headers,
     credentials: 'include', // Ensure cookies are sent (primary method)
   });
+  
+  // If we get 401 and have a debug token, it might be expired
+  if (response.status === 401 && debugToken) {
+    console.warn('Authentication failed with debug token, removing it');
+    localStorage.removeItem('temp_debug_token');
+  }
+  
+  return response;
 };
 
 // New functions - now using cookies for authentication
@@ -76,4 +88,20 @@ export const logout = async () => {
     throw new Error('Failed to logout');
   }
   return response.json();
+};
+
+// New session check function for better authentication reliability
+export const checkSession = async () => {
+  try {
+    const response = await authenticatedApiCall('/api/auth/check-session');
+    if (response.ok) {
+      const data = await response.json();
+      console.log('Session check result:', data);
+      return data;
+    }
+    return { authenticated: false, source: 'api-error' };
+  } catch (error) {
+    console.error('Session check failed:', error);
+    return { authenticated: false, source: 'network-error' };
+  }
 };
