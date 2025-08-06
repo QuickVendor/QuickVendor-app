@@ -10,5 +10,5 @@ healthCheckPath: /api/health
 # DATABASE_URL - PostgreSQL connection string
 # SECRET_KEY - JWT secret key (32+ characters)
 # ENVIRONMENT - production
-# SENTRY_DSN - Sentry DSN for error monitoring (optional)
-# SENTRY_ENVIRONMENT - production (optional)
+# SENTRY_DSN - Sentry DSN for error monitoring (RECOMMENDED for production)
+# SENTRY_ENVIRONMENT - production
