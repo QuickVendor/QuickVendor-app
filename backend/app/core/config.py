@@ -11,6 +11,12 @@ class Settings(BaseSettings):
     # Database - PostgreSQL URL
     DATABASE_URL: str = "postgresql://username:password@localhost/quickvendor"
     
+    # Sentry Configuration
+    SENTRY_DSN: Optional[str] = None
+    SENTRY_ENVIRONMENT: str = "development"
+    SENTRY_SAMPLE_RATE: float = 1.0
+    SENTRY_TRACES_SAMPLE_RATE: float = 0.1
+    
     class Config:
         env_file = ".env"
 

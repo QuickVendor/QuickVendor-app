@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+import logging
 
 from app.core.database import get_db
+from app.core.sentry import add_breadcrumb, capture_message_with_context
 from app.models.user import User
 from app.models.product import Product
 from app.schemas.storefront import StorefrontResponse, PublicProductResponse, ErrorResponse
@@ -30,6 +32,14 @@ async def get_public_storefront(
     
     Returns vendor information and all available products.
     """
+    # Add breadcrumb for storefront access
+    add_breadcrumb(
+        message=f"Storefront access attempt for username: {username}",
+        category="storefront",
+        level="info",
+        data={"username": username}
+    )
+    
     # Find user by extracting username from email
     # Username is the part before @ in the email
     user = db.query(User).filter(
@@ -37,6 +47,13 @@ async def get_public_storefront(
     ).first()
     
     if not user:
+        logging.warning(f"Storefront not found for username: {username}")
+        add_breadcrumb(
+            message="Storefront not found",
+            category="storefront",
+            level="warning",
+            data={"username": username}
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Username not found"
@@ -69,6 +86,31 @@ async def get_public_storefront(
     
     # Extract vendor name from email (part before @)
     vendor_name = user.email.split('@')[0].replace('.', ' ').replace('_', ' ').replace('-', ' ').title()
+    
+    # Log successful storefront access
+    logging.info(f"Storefront accessed successfully for user: {user.email} ({len(public_products)} products)")
+    add_breadcrumb(
+        message="Storefront access successful",
+        category="storefront",
+        level="info",
+        data={
+            "username": username,
+            "vendor_email": user.email,
+            "product_count": len(public_products)
+        }
+    )
+    
+    # Capture storefront view event
+    capture_message_with_context(
+        "Storefront viewed",
+        level="info",
+        context={
+            "username": username,
+            "vendor_id": str(user.id),
+            "vendor_email": user.email,
+            "product_count": len(public_products)
+        }
+    )
     
     return StorefrontResponse(
         vendor_name=vendor_name,

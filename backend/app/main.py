@@ -2,9 +2,21 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
+import logging
 
 from app.core.database import engine, Base
+from app.core.sentry import init_sentry
+from app.core.middleware import log_requests_middleware, SentryMiddleware
 from app.api import users, auth, products, store
+
+# Initialize Sentry before creating the app
+init_sentry()
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -15,6 +27,12 @@ app = FastAPI(
     description="Backend API for QuickVendor application",
     version="1.0.0"
 )
+
+# Add Sentry middleware first
+app.add_middleware(SentryMiddleware)
+
+# Add request logging middleware
+app.middleware("http")(log_requests_middleware)
 
 # Configure CORS - include production URLs
 allowed_origins = [
@@ -88,3 +106,30 @@ async def root():
 @app.get("/api/health")
 async def health_check():
     return {"status": "OK", "message": "QuickVendor API is healthy"}
+
+# Sentry test endpoints (development only)
+@app.get("/api/sentry/test-error")
+async def test_sentry_error():
+    """Test endpoint to verify Sentry error capture."""
+    import os
+    if os.getenv("ENVIRONMENT") == "production":
+        return {"error": "Not available in production"}
+    
+    raise Exception("Test error for Sentry monitoring")
+
+@app.get("/api/sentry/test-message")
+async def test_sentry_message():
+    """Test endpoint to verify Sentry message capture."""
+    import os
+    if os.getenv("ENVIRONMENT") == "production":
+        return {"error": "Not available in production"}
+    
+    from app.core.sentry import capture_message_with_context
+    
+    message_id = capture_message_with_context(
+        "Test message from QuickVendor API",
+        level="info",
+        context={"test_type": "message_capture", "endpoint": "/api/sentry/test-message"}
+    )
+    
+    return {"message": "Test message sent to Sentry", "message_id": message_id}
