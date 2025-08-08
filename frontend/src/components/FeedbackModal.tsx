@@ -42,38 +42,71 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, userCont
 
   const submitFeedback = async (feedbackData: FeedbackData): Promise<boolean> => {
     try {
-      // Use relative URL for production, fallback to localhost for development
+      // Get API base URL from environment or construct it
       const isDevelopment = window.location.hostname === 'localhost';
-      const baseUrl = isDevelopment ? 'http://localhost:8000' : '';
+      let baseUrl = '';
+      
+      if (isDevelopment) {
+        baseUrl = 'http://localhost:8000';
+      } else {
+        // In production, use environment variable or construct from current domain
+        baseUrl = import.meta.env.VITE_API_BASE_URL || 
+                 `${window.location.protocol}//quickvendor-backend.onrender.com`;
+      }
+      
       const url = `${baseUrl}/api/feedback/report`;
+      console.log('Submitting feedback to:', url);
       
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          // Add any additional headers if needed
         },
         body: JSON.stringify(feedbackData),
       });
 
-      // Check if response is ok before trying to parse JSON
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
+      // Handle different response statuses
       if (!response.ok) {
-        const statusText = response.statusText || 'Unknown error';
-        throw new Error(`HTTP ${response.status}: ${statusText}`);
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        
+        try {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json();
+            errorMessage = errorData.detail || errorData.message || errorMessage;
+          } else {
+            const text = await response.text();
+            if (text) {
+              console.log('Non-JSON error response:', text);
+              errorMessage = `${errorMessage}. Response: ${text.substring(0, 100)}`;
+            }
+          }
+        } catch (parseError) {
+          console.error('Error parsing error response:', parseError);
+        }
+        
+        throw new Error(errorMessage);
       }
 
-      // Check if response has content before parsing JSON
+      // Parse successful response
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
-        throw new Error(`Expected JSON response, got: ${text}`);
+        console.error('Expected JSON response but got:', text);
+        throw new Error(`Expected JSON response, got: ${text.substring(0, 100)}...`);
       }
 
       const result = await response.json();
+      console.log('Success response:', result);
       
       if (result.success) {
         return true;
       } else {
-        throw new Error(result.detail || result.message || 'Failed to submit feedback');
+        throw new Error(result.message || 'Failed to submit feedback');
       }
     } catch (error) {
       console.error('Error submitting feedback:', error);
