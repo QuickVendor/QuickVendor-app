@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '../../components/ui';
 import { User, ArrowRight, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { apiCall } from '../../shared/config/api';
@@ -17,6 +17,7 @@ interface SignupData {
 
 export const AuthPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -33,6 +34,13 @@ export const AuthPage: React.FC = () => {
     password: '',
     whatsappNumber: ''
   });
+
+  // Get the intended route from location state, default to dashboard
+  const getRedirectPath = () => {
+    const from = (location.state as any)?.from?.pathname;
+    console.log('AuthPage: Redirect path from location state:', from);
+    return from || '/dashboard';
+  };
 
   const validateWhatsApp = (number: string): boolean => {
     return number.startsWith('234') && number.length >= 13;
@@ -86,7 +94,9 @@ export const AuthPage: React.FC = () => {
         
         // Token is set as HTTP-only cookie by the server
         // No need to store in localStorage normally
-        navigate('/dashboard');
+        const redirectPath = getRedirectPath();
+        console.log('Login successful, redirecting to:', redirectPath);
+        navigate(redirectPath, { replace: true });
       } else {
         const errorData = await response.json();
         setErrors({ general: errorData.detail || 'Login failed' });
@@ -151,7 +161,9 @@ export const AuthPage: React.FC = () => {
         }
         
         // Token is set as HTTP-only cookie by the server
-        navigate('/dashboard');
+        const redirectPath = getRedirectPath();
+        console.log('Signup auto-login successful, redirecting to:', redirectPath);
+        navigate(redirectPath, { replace: true });
       } else {
         setErrors({ general: 'Registration successful, but login failed. Please try logging in.' });
       }
