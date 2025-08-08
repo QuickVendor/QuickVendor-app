@@ -1,19 +1,19 @@
-# 🛍️ QuickVendor - E-commerce Platform with WhatsApp Integration
+# QuickVendor - E-commerce Platform with WhatsApp Integration
 
 A modern, full-stack e-commerce platform that enables vendors to create online stores and sell products through WhatsApp integration. Built with FastAPI (Python) backend and React (TypeScript) frontend.
 
-## ✨ Features
+## Features
 
-- **🔐 User Authentication** - Secure registration and login system
-- **📦 Product Management** - Create, edit, delete products with multiple image uploads
-- **🏪 Shareable Storefronts** - Public store pages for each vendor
-- **💬 WhatsApp Integration** - Direct customer contact and order placement
-- **📊 Analytics** - Product click tracking and interest metrics
-- **📱 Mobile Responsive** - Optimized for all devices
-- **🗄️ PostgreSQL Database** - Production-ready data storage
-- **🚀 Cloud Ready** - Deployment-ready for Render, Vercel, or similar platforms
+- **User Authentication** - Secure registration and login system
+- **Product Management** - Create, edit, delete products with multiple image uploads
+- **Shareable Storefronts** - Public store pages for each vendor
+- **WhatsApp Integration** - Direct customer contact and order placement
+- **Analytics** - Product click tracking and interest metrics
+- **Mobile Responsive** - Optimized for all devices
+- **PostgreSQL Database** - Production-ready data storage
+- **Cloud Ready** - Deployment-ready for Render, Vercel, or similar platforms
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 ### Backend
 - **FastAPI** - Modern Python web framework
@@ -31,7 +31,7 @@ A modern, full-stack e-commerce platform that enables vendors to create online s
 - **React Router** - Client-side routing
 - **Lucide React** - Beautiful icons
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 QuickVendor-app/
@@ -57,7 +57,7 @@ QuickVendor-app/
 └── DEPLOYMENT.md          # Deployment guide
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Python 3.9+
@@ -107,7 +107,7 @@ QuickVendor-app/
    - Backend API: http://localhost:8000
    - API Documentation: http://localhost:8000/docs
 
-## 📚 API Documentation
+## API Documentation
 
 The API documentation is automatically generated and available at `/docs` when running the backend server.
 
@@ -119,7 +119,7 @@ The API documentation is automatically generated and available at `/docs` when r
 - `GET /api/products` - Get user's products
 - `GET /api/store/{username}` - Get public storefront
 
-## 🎯 Usage
+## Usage
 
 ### For Vendors
 1. **Register** an account on the platform
@@ -134,7 +134,7 @@ The API documentation is automatically generated and available at `/docs` when r
 3. **Contact** vendors directly via WhatsApp
 4. **Place orders** through WhatsApp conversation
 
-## 🌐 Deployment
+## Deployment
 
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions for Render and other cloud platforms.
 
@@ -144,7 +144,7 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions for Re
 3. Deploy frontend service (use `frontend/` root directory)
 4. Configure environment variables
 
-## 🔧 Configuration
+## Configuration
 
 ### Backend Environment Variables
 ```bash
@@ -158,7 +158,7 @@ ENVIRONMENT=development|production
 VITE_API_BASE_URL=http://localhost:8000  # Backend URL
 ```
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -166,17 +166,17 @@ VITE_API_BASE_URL=http://localhost:8000  # Backend URL
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Built with modern web technologies
 - Inspired by the need for simple e-commerce solutions
 - WhatsApp integration for emerging markets
 
-## 📞 Support
+## Support
 
 For support, please:
 1. Check the [DEPLOYMENT.md](./DEPLOYMENT.md) guide
@@ -185,4 +185,4 @@ For support, please:
 
 ---
 
-**Made with ❤️ for small businesses and entrepreneurs**
+**Made with love for small businesses and entrepreneurs**

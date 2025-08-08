@@ -16,9 +16,12 @@ logs/
 *.tmp
 *.temp
 
-# Environment variables (keep local copies only)
+# Environment variables (never commit sensitive data)
+.env
 .env.local
 .env.*.local
+.env.production
+.env.development
 
 # Build artifacts
 dist/

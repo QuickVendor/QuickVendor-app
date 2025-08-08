@@ -4,11 +4,14 @@ from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
 import os
 
-# PostgreSQL database URL from environment
+# Database URL from environment
 SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
 
-# Create engine for PostgreSQL
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+# Create engine with proper SQLite configuration
+if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+else:
+    engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
 # Create SessionLocal class
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
