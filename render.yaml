@@ -1,5 +1,34 @@
 services:
   - type: web
+    name: quickvendor-backend
+    runtime: python
+    plan: free
+    buildCommand: cd backend && pip install -r requirements-production.txt
+    startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    pythonVersion: "3.12"
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: quickvendor-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: SENTRY_DSN
+        value: https://59290a7d9fa316e06201485cf37c87af@o4509797898846208.ingest.de.sentry.io/4509798319587408
+      - key: SENTRY_ENVIRONMENT
+        value: production
+      - key: SENTRY_SAMPLE_RATE
+        value: "1.0"
+      - key: SENTRY_TRACES_SAMPLE_RATE
+        value: "0.1"
+      - key: SLACK_WEBHOOK_URL
+        value: https://hooks.slack.com/services/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
+      - key: FRONTEND_URL
+        value: https://quickvendor-frontend.onrender.com
+
+  - type: web
     name: quickvendor-frontend
     runtime: static
     buildCommand: cd frontend && npm ci && npm run build
@@ -11,3 +40,10 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: VITE_API_BASE_URL
+        value: https://quickvendor-backend.onrender.com
+
+databases:
+  - name: quickvendor-db
+    databaseName: quickvendor
+    user: quickvendor
