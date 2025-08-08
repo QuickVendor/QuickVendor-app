@@ -33,15 +33,22 @@ const SentryRoutes: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
 function App() {
   const [currentUser, setCurrentUser] = useState<{ id?: string; email?: string; username?: string } | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const location = useLocation();
 
-  // Load user context on app initialization
+  // Load user context on app initialization - only once
   useEffect(() => {
     const loadUserContext = async () => {
       try {
+        setAuthLoading(true);
+        
         // Only try to load user if we have authentication tokens
-        const hasToken = document.cookie.includes('access_token') || localStorage.getItem('auth_token');
+        const hasToken = document.cookie.includes('access_token') || 
+                         localStorage.getItem('auth_token') ||
+                         localStorage.getItem('temp_debug_token');
+        
         if (hasToken) {
+          console.log('App: Found auth token, loading user context...');
           const { getAuthenticatedUser } = await import('./shared/config/api');
           const userData = await getAuthenticatedUser();
           setCurrentUser({
@@ -49,22 +56,32 @@ function App() {
             email: userData.email,
             username: userData.username
           });
+          console.log('App: User context loaded successfully');
+        } else {
+          console.log('App: No auth token found');
+          setCurrentUser(null);
         }
       } catch (error) {
         // User is not authenticated or token is invalid
-        // This is normal for logged-out users, so we don't log it as an error
+        console.warn('App: Failed to load user context:', error);
         setCurrentUser(null);
+        // Clear invalid tokens
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('temp_debug_token');
+      } finally {
+        setAuthLoading(false);
       }
     };
 
     loadUserContext();
-  }, []);
+  }, []); // Only run on mount
 
-  // Update user context when navigating to dashboard (user just logged in)
+  // Update user context when successfully logging in and navigating to protected routes
   useEffect(() => {
-    if (location.pathname === '/dashboard' && !currentUser) {
+    if (location.pathname === '/dashboard' && !currentUser && !authLoading) {
       const loadUserContext = async () => {
         try {
+          console.log('App: Loading user context for dashboard access...');
           const { getAuthenticatedUser } = await import('./shared/config/api');
           const userData = await getAuthenticatedUser();
           setCurrentUser({
@@ -72,14 +89,25 @@ function App() {
             email: userData.email,
             username: userData.username
           });
+          console.log('App: User context loaded for dashboard');
         } catch (error) {
-          // If we can't load user data on dashboard, something is wrong with auth
-          console.warn('Failed to load user context on dashboard:', error);
+          console.warn('App: Failed to load user context on dashboard access:', error);
+          // Don't clear tokens here as ProtectedRoute will handle authentication
         }
       };
       loadUserContext();
     }
-  }, [location.pathname, currentUser]);
+  }, [location.pathname, currentUser, authLoading]);
+
+  // Show loading screen while checking initial auth state
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600"></div>
+        <span className="ml-4 text-gray-600 text-lg">Loading QuickVendor...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="relative">
@@ -90,8 +118,9 @@ function App() {
         {/* Public storefront route */}
         <Route path="/store/:username" element={<StorefrontPage />} />
         
-        {/* Auth route */}
+        {/* Auth routes - support both /auth and /login */}
         <Route path="/auth" element={<AuthPage />} />
+        <Route path="/login" element={<AuthPage />} />
         
         {/* Vendor dashboard route */}
         <Route 
@@ -109,8 +138,8 @@ function App() {
           element={<HomePage />} 
         />
         
-        {/* Catch all route - redirect to home */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* Catch all route - redirect unknown routes to login instead of home */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </SentryRoutes>
 
       {/* Global Floating Feedback Button - appears on all pages */}
