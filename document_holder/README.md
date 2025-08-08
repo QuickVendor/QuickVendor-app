@@ -2,7 +2,7 @@
 
 This folder contains essential documentation files for the QuickVendor application.
 
-## 📚 Contents
+##  Contents
 
 ### Core Documentation
 - **feedback_system.md** - Comprehensive guide for the FastAPI + Slack feedback system implementation
@@ -16,6 +16,6 @@ This folder contains essential documentation files for the QuickVendor applicati
 - **SHAREABLE_STOREFRONT_GUIDE.md** - Guide for implementing shareable storefronts
 - **USER_COMPLAINT_SYSTEM_TESTING_GUIDE.md** - Testing procedures for the user complaint system
 
-## 📝 Note
+##  Note
 
 These documentation files have been moved here to keep the project root clean while preserving important technical documentation for future reference and team onboarding.

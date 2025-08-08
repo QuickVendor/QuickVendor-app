@@ -34,7 +34,7 @@ const FloatingFeedbackButton: React.FC<FloatingFeedbackButtonProps> = ({ userCon
           {/* Tooltip */}
           <div className={`absolute bottom-full right-0 mb-2 transition-all duration-200 pointer-events-none ${
             isHovered ? 'opacity-100 visible' : 'opacity-0 invisible'
-          }`}>
+          }`} data-testid="feedback-tooltip">
             <div className="bg-gray-900 text-white text-sm px-3 py-2 rounded-lg whitespace-nowrap shadow-lg">
               {isAuthenticated ? 'Share your feedback' : 'Share feedback anonymously'}
               <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-900"></div>

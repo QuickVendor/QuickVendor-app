@@ -23,8 +23,11 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
-    "noImplicitOverride": true
+    "noImplicitOverride": true,
+
+    /* Types */
+    "types": ["vitest/globals", "@testing-library/jest-dom"]
   },
-  "include": ["src/**/*", "src/**/*.tsx", "src/**/*.ts"],
-  "exclude": ["node_modules", "dist", "**/*.test.*"]
+  "include": ["src/**/*", "src/**/*.tsx", "src/**/*.ts", "src/**/*.d.ts"],
+  "exclude": ["node_modules", "dist"]
 }

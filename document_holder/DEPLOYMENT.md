@@ -1,4 +1,4 @@
-# 🚀 QuickVendor - Render Deployment Guide
+# QuickVendor - Render Deployment Guide
 
 ## Overview
 
@@ -206,7 +206,7 @@ For deployment issues:
 
 ---
 
-**Your QuickVendor platform is now live! 🎉**
+**Your QuickVendor platform is now live! **
 
 **Frontend:** `https://your-frontend-url.onrender.com`  
 **Backend API:** `https://your-backend-url.onrender.com`

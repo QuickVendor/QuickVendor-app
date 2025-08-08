@@ -1,11 +1,11 @@
-# 🚀 QuickVendor Setup Guide
+# QuickVendor Setup Guide
 
-## 📋 Prerequisites
+## Prerequisites
 - Python 3.8+ 
 - Node.js 16+
 - Git
 
-## ⚡ Quick Start
+## Quick Start
 
 ### 1. Clone Repository
 ```bash
@@ -58,7 +58,7 @@ npm run dev
 
 Visit: http://localhost:5173
 
-## 🔐 Environment Variables
+## Environment Variables
 
 ### Backend (.env)
 ```env
@@ -75,8 +75,8 @@ VITE_SENTRY_DSN=your-sentry-dsn-optional
 VITE_NODE_ENV=development
 ```
 
-## 📚 Documentation
+## Documentation
 Essential documentation is available in `/document_holder/`
 
-## 🛟 Support
+## Support
 Check the README.md for detailed information or refer to documentation in `/document_holder/`
