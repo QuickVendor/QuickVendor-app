@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     # Database - SQLite for development, PostgreSQL for production
     DATABASE_URL: str = "sqlite:///./quickvendor.db"
     
+    # Base URL for image serving (production: full backend URL)
+    BASE_URL: Optional[str] = None  # e.g., https://quickvendor-backend.onrender.com
+    
     # Sentry Configuration
     SENTRY_DSN: Optional[str] = None
     SENTRY_ENVIRONMENT: str = "development"

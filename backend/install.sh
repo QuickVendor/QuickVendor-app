@@ -16,6 +16,7 @@ pip install --only-binary=all --upgrade pydantic-settings==2.7.0
 pip install --only-binary=all --upgrade python-multipart==0.0.18
 
 echo "==> Installing authentication and security dependencies"
+pip install --only-binary=all --upgrade bcrypt==4.0.1
 pip install --only-binary=all --upgrade "passlib[bcrypt]==1.7.4"
 pip install --only-binary=all --upgrade "python-jose[cryptography]==3.3.0"
 
