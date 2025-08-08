@@ -22,6 +22,6 @@ pip install --only-binary=all --upgrade psycopg2-binary==2.9.10
 
 echo "==> Installing Sentry SDK for production monitoring"
 pip install --only-binary=all --upgrade "sentry-sdk[fastapi]==2.19.2"
-
+pip install --only-binary=all --upgrade httpx==0.24.1
 echo "==> Installation complete"
 pip list
