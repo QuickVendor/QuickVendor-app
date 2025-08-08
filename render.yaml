@@ -37,7 +37,7 @@ services:
     staticPublishPath: frontend/dist
     routes:
       - type: rewrite
-        source: /*
+        source: /.*
         destination: /index.html
     envVars:
       - key: NODE_ENV
