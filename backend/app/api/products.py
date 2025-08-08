@@ -20,8 +20,12 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 async def save_uploaded_file(file: UploadFile, product_id: str) -> str:
-    """Save uploaded file and return the file path."""
-    if file.filename:
+    """Save uploaded file and return URL path"""
+    if file and file.filename:
+        # Ensure the upload directory exists
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
+        
+        # Generate filename with product ID to avoid conflicts
         file_extension = os.path.splitext(file.filename)[1]
         filename = f"{product_id}{file_extension}"
         file_path = os.path.join(UPLOAD_DIR, filename)
@@ -29,8 +33,12 @@ async def save_uploaded_file(file: UploadFile, product_id: str) -> str:
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         
-        # Return path relative to the server root for proper URL construction
-        return f"/uploads/{filename}"
+        # Construct full URL for production or relative path for development
+        from app.core.config import settings
+        if settings.BASE_URL:
+            return f"{settings.BASE_URL}/uploads/{filename}"
+        else:
+            return f"/uploads/{filename}"
     return None
 
 
@@ -307,9 +315,14 @@ async def delete_product(
         )
     
     try:
-        # Delete associated image file if exists
-        if product.image_url and os.path.exists(product.image_url.lstrip('/')):
-            os.remove(product.image_url.lstrip('/'))
+        # Delete associated image files if they exist
+        for i in range(1, 6):  # image_url_1 through image_url_5
+            image_url = getattr(product, f'image_url_{i}', None)
+            if image_url:
+                # Handle both relative and absolute URLs
+                file_path = image_url.lstrip('/') if image_url.startswith('/') else image_url
+                if os.path.exists(file_path):
+                    os.remove(file_path)
         
         db.delete(product)
         db.commit()
@@ -318,7 +331,7 @@ async def delete_product(
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Failed to delete product"
+            detail=f"Failed to delete product: {str(e)}"
         )
 
 
