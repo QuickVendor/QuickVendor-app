@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Input, Card, CardHeader, CardTitle, CardContent } from './ui';
+import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '../../components/ui';
 import { User, ArrowRight, Eye, EyeOff, ArrowLeft } from 'lucide-react';
-import { apiCall } from '../config/api';
+import { apiCall } from '../../shared/config/api';
 
 interface LoginData {
   email: string;

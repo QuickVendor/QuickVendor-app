@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Input, Textarea, Toggle } from './ui';
-import { Modal } from './ui/Modal';
-import { Upload, X } from 'lucide-react';
-import { createProduct, updateProduct } from '../apiService';
-import { API_BASE_URL } from '../config/api';
+import { Button, Input, Textarea, Toggle } from '../../components/ui';
+import { Modal } from '../../components/ui/Modal';
+import { Plus, X, Upload } from 'lucide-react';
+import { createProduct, updateProduct } from '../../shared/apiService';
+import { API_BASE_URL } from '../../shared/config/api';
 
 // Helper function to get full image URL
 const getImageUrl = (imagePath: string | null | undefined): string => {

@@ -7,7 +7,7 @@ import logging
 from app.core.database import engine, Base
 from app.core.sentry import init_sentry
 from app.core.middleware import log_requests_middleware, SentryMiddleware
-from app.api import users, auth, products, store
+from app.api import users, auth, products, store, feedback
 
 # Initialize Sentry before creating the app
 init_sentry()
@@ -92,6 +92,11 @@ app.include_router(
     store.router,
     prefix="/api/store",
     tags=["storefront"]
+)
+app.include_router(
+    feedback.router,
+    prefix="/api/feedback",
+    tags=["feedback"]
 )
 
 # Mount static files for uploaded images

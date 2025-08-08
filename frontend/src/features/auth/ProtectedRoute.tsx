@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { checkSession } from '../config/api';
+import { checkSession } from '../../shared/config/api';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { PageLayout, Button, Card, CardContent } from './ui';
-import { ArrowLeft, MessageCircle, Eye, Store, Loader2, ChevronLeft, ChevronRight, Package } from 'lucide-react';
-import { getStorefrontData, trackClick } from '../apiService';
-import { API_BASE_URL } from '../config/api';
+import { PageLayout, Button, Card, CardContent } from '../../components/ui';
+import { ArrowLeft, Store, MessageCircle, ChevronLeft, ChevronRight, Eye, Loader2, Package } from 'lucide-react';
+import { getStorefrontData, trackClick } from '../../shared/apiService';
+import { API_BASE_URL } from '../../shared/config/api';
 
 // Helper function to get full image URL
 const getImageUrl = (imagePath: string | null | undefined): string => {

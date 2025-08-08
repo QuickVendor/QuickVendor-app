@@ -1,12 +1,11 @@
 import { Routes, Route, Navigate, Link, useLocation, useNavigationType } from 'react-router-dom';
 import { Store, MessageCircle, Package, ExternalLink } from 'lucide-react';
 import * as Sentry from '@sentry/react';
-import { useEffect } from 'react';
-import { AuthPage } from './components/AuthPage';
-import { VendorDashboard } from './components/VendorDashboard';
-import { StorefrontPage } from './components/StorefrontPage';
-import { ProductDetailsPage } from './components/ProductDetailsPage';
-import { ProtectedRoute } from './components/ProtectedRoute';
+import { useEffect, useState } from 'react';
+import { AuthPage, ProtectedRoute } from './features/auth';
+import { VendorDashboard } from './features/dashboard';
+import { StorefrontPage, ProductDetailsPage } from './features/storefront';
+import FloatingFeedbackButton from './components/FloatingFeedbackButton';
 
 // Modern Sentry routing integration using useLocation
 const SentryRoutes: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -33,36 +32,90 @@ const SentryRoutes: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 };
 
 function App() {
+  const [currentUser, setCurrentUser] = useState<{ id?: string; email?: string; username?: string } | null>(null);
+  const location = useLocation();
+
+  // Load user context on app initialization
+  useEffect(() => {
+    const loadUserContext = async () => {
+      try {
+        // Only try to load user if we have authentication tokens
+        const hasToken = document.cookie.includes('access_token') || localStorage.getItem('auth_token');
+        if (hasToken) {
+          const { getAuthenticatedUser } = await import('./shared/config/api');
+          const userData = await getAuthenticatedUser();
+          setCurrentUser({
+            id: userData.id,
+            email: userData.email,
+            username: userData.username
+          });
+        }
+      } catch (error) {
+        // User is not authenticated or token is invalid
+        // This is normal for logged-out users, so we don't log it as an error
+        setCurrentUser(null);
+      }
+    };
+
+    loadUserContext();
+  }, []);
+
+  // Update user context when navigating to dashboard (user just logged in)
+  useEffect(() => {
+    if (location.pathname === '/dashboard' && !currentUser) {
+      const loadUserContext = async () => {
+        try {
+          const { getAuthenticatedUser } = await import('./shared/config/api');
+          const userData = await getAuthenticatedUser();
+          setCurrentUser({
+            id: userData.id,
+            email: userData.email,
+            username: userData.username
+          });
+        } catch (error) {
+          // If we can't load user data on dashboard, something is wrong with auth
+          console.warn('Failed to load user context on dashboard:', error);
+        }
+      };
+      loadUserContext();
+    }
+  }, [location.pathname, currentUser]);
+
   return (
-    <SentryRoutes>
-      {/* Product details route - must come before storefront route to avoid conflicts */}
-      <Route path="/store/:username/product/:productId" element={<ProductDetailsPage />} />
-      
-      {/* Public storefront route */}
-      <Route path="/store/:username" element={<StorefrontPage />} />
-      
-      {/* Auth route */}
-      <Route path="/auth" element={<AuthPage />} />
-      
-      {/* Vendor dashboard route */}
-      <Route 
-        path="/dashboard" 
-        element={
-          <ProtectedRoute>
-            <VendorDashboard />
-          </ProtectedRoute>
-        } 
-      />
-      
-      {/* Default route */}
-      <Route 
-        path="/" 
-        element={<HomePage />} 
-      />
-      
-      {/* Catch all route - redirect to home */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </SentryRoutes>
+    <div className="relative">
+      <SentryRoutes>
+        {/* Product details route - must come before storefront route to avoid conflicts */}
+        <Route path="/store/:username/product/:productId" element={<ProductDetailsPage />} />
+        
+        {/* Public storefront route */}
+        <Route path="/store/:username" element={<StorefrontPage />} />
+        
+        {/* Auth route */}
+        <Route path="/auth" element={<AuthPage />} />
+        
+        {/* Vendor dashboard route */}
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <VendorDashboard />
+            </ProtectedRoute>
+          } 
+        />
+        
+        {/* Default route */}
+        <Route 
+          path="/" 
+          element={<HomePage />} 
+        />
+        
+        {/* Catch all route - redirect to home */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </SentryRoutes>
+
+      {/* Global Floating Feedback Button - appears on all pages */}
+      <FloatingFeedbackButton userContext={currentUser} />
+    </div>
   );
 }
 

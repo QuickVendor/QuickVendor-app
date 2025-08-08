@@ -3,10 +3,16 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import * as Sentry from '@sentry/react';
 import App from './App.tsx';
-import ErrorFallback from './components/ErrorFallback.tsx';
 import './index.css';
 
-// Initialize Sentry
+// Simple error fallback component
+const ErrorFallback = ({ error, resetError }: { error: unknown; resetError: () => void }) => (
+  <div role="alert" className="p-5 text-center">
+    <h2>Something went wrong:</h2>
+    <pre className="text-red-600">{error instanceof Error ? error.message : String(error)}</pre>
+    <button onClick={resetError}>Try again</button>
+  </div>
+);
 Sentry.init({
   dsn: import.meta.env.VITE_SENTRY_DSN,
   environment: import.meta.env.MODE || 'development',

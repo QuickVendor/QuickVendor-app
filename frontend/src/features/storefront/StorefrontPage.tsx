@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { PageLayout, Card, CardContent, Button } from './ui';
+import { PageLayout, Card, CardContent, Button } from '../../components/ui';
 import { MessageCircle, Store, Package, Loader2, Eye } from 'lucide-react';
-import { getStorefrontData, trackClick } from '../apiService';
-import { API_BASE_URL } from '../config/api';
+import { getStorefrontData, trackClick } from '../../shared/apiService';
+import { API_BASE_URL } from '../../shared/config/api';
 
 // Helper function to get full image URL
 const getImageUrl = (imagePath: string | null | undefined): string => {
