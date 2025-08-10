@@ -1,35 +1,27 @@
-# QuickVendor - E-commerce Platform with WhatsApp Integration
+# QuickVendor API - E-commerce Backend with WhatsApp Integration
 
-A modern, full-stack e-commerce platform that enables vendors to create online stores and sell products through WhatsApp integration. Built with FastAPI (Python) backend and React (TypeScript) frontend.
+A modern FastAPI backend service that powers e-commerce platforms with WhatsApp integration. This API enables vendors to manage online stores and products, with built-in analytics and secure authentication.
 
 ## Features
 
-- **User Authentication** - Secure registration and login system
-- **Product Management** - Create, edit, delete products with multiple image uploads
-- **Shareable Storefronts** - Public store pages for each vendor
-- **WhatsApp Integration** - Direct customer contact and order placement
-- **Analytics** - Product click tracking and interest metrics
-- **Mobile Responsive** - Optimized for all devices
-- **PostgreSQL Database** - Production-ready data storage
-- **Cloud Ready** - Deployment-ready for Render, Vercel, or similar platforms
+- **User Authentication** - Secure JWT-based registration and login system
+- **Product Management** - RESTful API for creating, editing, and deleting products with image uploads
+- **Storefront API** - Public endpoints for vendor storefronts
+- **WhatsApp Integration** - API support for customer contact and order placement
+- **Analytics API** - Product click tracking and interest metrics endpoints
+- **PostgreSQL Database** - Production-ready data storage with SQLAlchemy ORM
+- **Cloud Ready** - Deployment-ready for Render, Railway, or similar platforms
+- **API Documentation** - Auto-generated OpenAPI/Swagger documentation
 
 ## Technology Stack
 
-### Backend
-- **FastAPI** - Modern Python web framework
+- **FastAPI** - Modern, fast Python web framework
 - **PostgreSQL** - Production database
 - **SQLAlchemy** - Database ORM
 - **JWT** - Authentication tokens
-- **Pydantic** - Data validation
-- **Uvicorn** - ASGI server
-
-### Frontend
-- **React 18** - Modern React with hooks
-- **TypeScript** - Type-safe JavaScript
-- **Vite** - Fast build tool
-- **Tailwind CSS** - Utility-first CSS framework
-- **React Router** - Client-side routing
-- **Lucide React** - Beautiful icons
+- **Pydantic** - Data validation and serialization
+- **Uvicorn** - Lightning-fast ASGI server
+- **Python 3.9+** - Modern Python features
 
 ## Project Structure
 
@@ -42,27 +34,23 @@ QuickVendor-app/
 │   │   ├── models/         # Database models
 │   │   ├── schemas/        # Pydantic schemas
 │   │   └── main.py         # FastAPI app
+│   ├── tests/              # Backend tests
 │   ├── uploads/            # File upload storage
 │   ├── requirements.txt    # Python dependencies
-│   └── .env               # Environment variables
-├── frontend/               # React frontend
-│   ├── src/
-│   │   ├── components/     # React components
-│   │   ├── config/         # API configuration
-│   │   └── main.tsx       # App entry point
-│   ├── public/            # Static assets
-│   ├── package.json       # Node.js dependencies
-│   └── index.html         # HTML template
+│   ├── .env               # Environment variables
+│   └── .env.example       # Environment template
+├── document_holder/        # Documentation archive
 ├── README.md              # Project documentation
-└── DEPLOYMENT.md          # Deployment guide
+├── render.yaml            # Render deployment config
+├── run-tests.sh           # Test runner script
+└── SETUP.md               # Setup instructions
 ```
 
 ## Quick Start
 
 ### Prerequisites
 - Python 3.9+
-- Node.js 18+
-- PostgreSQL (for production)
+- PostgreSQL (for production) or SQLite (for development)
 
 ### Local Development
 
@@ -72,7 +60,7 @@ QuickVendor-app/
    cd QuickVendor-app
    ```
 
-2. **Backend Setup**
+2. **Setup**
    ```bash
    cd backend
    
@@ -91,21 +79,10 @@ QuickVendor-app/
    uvicorn app.main:app --reload
    ```
 
-3. **Frontend Setup**
-   ```bash
-   cd frontend
-   
-   # Install dependencies
-   npm install
-   
-   # Start development server
-   npm run dev
-   ```
-
-4. **Access the application**
-   - Frontend: http://localhost:5173
-   - Backend API: http://localhost:8000
+3. **Access the API**
+   - API Base URL: http://localhost:8000
    - API Documentation: http://localhost:8000/docs
+   - ReDoc Documentation: http://localhost:8000/redoc
 
 ## API Documentation
 
@@ -119,43 +96,42 @@ The API documentation is automatically generated and available at `/docs` when r
 - `GET /api/products` - Get user's products
 - `GET /api/store/{username}` - Get public storefront
 
-## Usage
+## API Usage
 
-### For Vendors
-1. **Register** an account on the platform
-2. **Login** to access the vendor dashboard
-3. **Add Products** with images, descriptions, and prices
-4. **Share** your storefront URL with customers
-5. **Track** product interest and clicks
+### Authentication Flow
+1. **Register** - POST to `/api/users/register` with user details
+2. **Login** - POST to `/api/auth/login` to receive JWT token
+3. **Authenticate** - Include token in Authorization header for protected endpoints
 
-### For Customers
-1. **Visit** a vendor's storefront via shared link
-2. **Browse** products with detailed views
-3. **Contact** vendors directly via WhatsApp
-4. **Place orders** through WhatsApp conversation
+### Product Management
+1. **Create Product** - POST to `/api/products` with product data
+2. **Update Product** - PUT to `/api/products/{id}` 
+3. **Delete Product** - DELETE to `/api/products/{id}`
+4. **List Products** - GET to `/api/products`
+
+### Storefront Access
+1. **Get Store** - GET to `/api/store/{username}` for public storefront
+2. **Track Clicks** - POST to `/api/products/{id}/click` to record interest
 
 ## Deployment
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions for Render and other cloud platforms.
-
 ### Quick Deploy to Render
-1. Deploy PostgreSQL database
-2. Deploy backend service (use `backend/` root directory)
-3. Deploy frontend service (use `frontend/` root directory)
-4. Configure environment variables
+1. Deploy PostgreSQL database on Render
+2. Deploy backend service:
+   - Set root directory to `backend/`
+   - Configure environment variables
+   - Use build command: `pip install -r requirements-production.txt`
+   - Use start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 
 ## Configuration
 
-### Backend Environment Variables
+### Environment Variables
 ```bash
 DATABASE_URL=postgresql://user:password@host:port/database
-SECRET_KEY=your-secure-secret-key
+SECRET_KEY=your-secure-secret-key  # Generate with: openssl rand -hex 32
 ENVIRONMENT=development|production
-```
-
-### Frontend Environment Variables
-```bash
-VITE_API_BASE_URL=http://localhost:8000  # Backend URL
+SENTRY_DSN=your-sentry-dsn  # Optional: for error tracking
+FRONTEND_URL=https://your-frontend-url  # CORS configuration
 ```
 
 ## Contributing
@@ -179,8 +155,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 For support, please:
-1. Check the [DEPLOYMENT.md](./DEPLOYMENT.md) guide
-2. Review API documentation at `/docs`
+1. Review API documentation at `/docs`
+2. Check the deployment section above
 3. Open an issue in the repository
 
 ---
