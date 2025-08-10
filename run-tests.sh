@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # QuickVendor Test Runner
-# Runs both frontend and backend tests
+# Runs backend tests
 
 set -e
 
-echo "🧪 QuickVendor Test Suite Runner"
-echo "================================"
+echo "🧪 QuickVendor Backend Test Suite Runner"
+echo "========================================"
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -33,7 +33,7 @@ run_backend_tests() {
     fi
     
     # Run tests
-    if pytest tests/backend/ -v --tb=short; then
+    if pytest tests/ -v --tb=short; then
         print_status "✅ Backend tests passed!" "${GREEN}"
     else
         print_status "❌ Backend tests failed!" "${RED}"
@@ -44,61 +44,19 @@ run_backend_tests() {
     echo
 }
 
-# Function to run frontend tests
-run_frontend_tests() {
-    print_status "🎨 Running Frontend Tests (React + Vitest)" "${YELLOW}"
-    echo "----------------------------------------"
-    
-    cd frontend
-    
-    # Check if node_modules exists
-    if [ ! -d "node_modules" ]; then
-        print_status "Installing frontend dependencies..." "${YELLOW}"
-        npm install
-    fi
-    
-    # Run tests
-    if npm run test -- --run; then
-        print_status "✅ Frontend tests passed!" "${GREEN}"
-    else
-        print_status "❌ Frontend tests failed!" "${RED}"
-        FRONTEND_FAILED=1
-    fi
-    
-    cd ..
-    echo
-}
-
 # Initialize failure flags
 BACKEND_FAILED=0
-FRONTEND_FAILED=0
 
-# Parse command line arguments
-case "${1:-all}" in
-    "backend"|"be")
-        run_backend_tests
-        ;;
-    "frontend"|"fe")
-        run_frontend_tests
-        ;;
-    "all"|*)
-        run_backend_tests
-        run_frontend_tests
-        ;;
-esac
+# Run backend tests
+run_backend_tests
 
 # Print final results
 echo "================================"
-if [ $BACKEND_FAILED -eq 0 ] && [ $FRONTEND_FAILED -eq 0 ]; then
+if [ $BACKEND_FAILED -eq 0 ]; then
     print_status "🎉 All tests passed successfully!" "${GREEN}"
     exit 0
 else
-    if [ $BACKEND_FAILED -eq 1 ]; then
-        print_status "❌ Backend tests failed" "${RED}"
-    fi
-    if [ $FRONTEND_FAILED -eq 1 ]; then
-        print_status "❌ Frontend tests failed" "${RED}"
-    fi
-    print_status "💥 Some tests failed. Check output above." "${RED}"
+    print_status "❌ Backend tests failed" "${RED}"
+    print_status "💥 Tests failed. Check output above." "${RED}"
     exit 1
 fi
