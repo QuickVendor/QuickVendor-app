@@ -50,10 +50,13 @@ class S3Manager:
         - AWS_REGION: AWS region (e.g., 'us-east-1')
         - S3_BUCKET_NAME: Name of the S3 bucket
         """
-        self.aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
-        self.aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
-        self.aws_region = os.getenv('AWS_REGION', 'us-east-1')  # Default to us-east-1
-        self.bucket_name = os.getenv('S3_BUCKET_NAME')
+        # Import settings here to avoid circular imports
+        from app.core.config import settings
+        
+        self.aws_access_key_id = settings.AWS_ACCESS_KEY_ID or os.getenv('AWS_ACCESS_KEY_ID')
+        self.aws_secret_access_key = settings.AWS_SECRET_ACCESS_KEY or os.getenv('AWS_SECRET_ACCESS_KEY')
+        self.aws_region = settings.AWS_REGION or os.getenv('AWS_REGION', 'us-east-1')
+        self.bucket_name = settings.S3_BUCKET_NAME or os.getenv('S3_BUCKET_NAME')
         self.s3_client = None
         self.is_configured = False
         
