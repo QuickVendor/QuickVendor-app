@@ -462,6 +462,38 @@ async def upload_product_image_to_s3(
         # Initialize S3 manager
         s3_manager = get_s3_manager()
         
+        # Check if S3 is configured, if not fallback to local storage
+        if not s3_manager.is_s3_configured():
+            logging.warning(f"S3 not configured, falling back to local storage for product {product_id}")
+            
+            # Reset file pointer for local storage
+            image.file.seek(0)
+            
+            # Save to local storage using existing function
+            image_url = await save_uploaded_file(image, f"{product_id}_img{image_slot}")
+            
+            if not image_url:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to save image to local storage."
+                )
+            
+            # Update product with local image URL
+            image_field = f"image_url_{image_slot}"
+            setattr(product, image_field, image_url)
+            db.commit()
+            db.refresh(product)
+            
+            logging.info(f"Successfully uploaded image to local storage for product {product_id}, slot {image_slot}")
+            
+            return {
+                "url": image_url,
+                "filename": image.filename,
+                "product_id": product_id,
+                "image_slot": image_slot,
+                "storage_type": "local"
+            }
+        
         # Upload to S3
         upload_result = await s3_manager.upload_product_image(
             file_content=file_like,
@@ -512,6 +544,7 @@ async def upload_product_image_to_s3(
         
         # Add image_slot to response
         upload_result["image_slot"] = image_slot
+        upload_result["storage_type"] = "s3"
         
         return upload_result
         
@@ -639,6 +672,15 @@ async def check_s3_status(
     """
     try:
         s3_manager = get_s3_manager()
+        
+        if not s3_manager.is_s3_configured():
+            return {
+                "status": "not_configured",
+                "bucket_configured": bool(os.getenv('S3_BUCKET_NAME')),
+                "message": "S3 service is not configured. Using local storage as fallback.",
+                "storage_type": "local"
+            }
+        
         is_connected = await s3_manager.validate_s3_connection()
         
         if is_connected:
@@ -647,20 +689,16 @@ async def check_s3_status(
                 "bucket_configured": True,
                 "message": "S3 service is properly configured and accessible",
                 "bucket_name": os.getenv('S3_BUCKET_NAME', 'Not configured'),
-                "region": os.getenv('AWS_REGION', 'Not configured')
+                "region": os.getenv('AWS_REGION', 'Not configured'),
+                "storage_type": "s3"
             }
         else:
             return {
                 "status": "error",
                 "bucket_configured": bool(os.getenv('S3_BUCKET_NAME')),
-                "message": "S3 service is configured but not accessible. Check permissions."
+                "message": "S3 service is configured but not accessible. Check permissions.",
+                "storage_type": "local"
             }
-    except ValueError:
-        return {
-            "status": "error",
-            "bucket_configured": False,
-            "message": "S3 service is not configured. Missing AWS credentials."
-        }
     except Exception as e:
         logging.error(f"Error checking S3 status: {str(e)}")
         raise HTTPException(

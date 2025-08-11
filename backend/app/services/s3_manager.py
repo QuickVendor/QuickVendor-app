@@ -10,12 +10,23 @@ from typing import Optional, BinaryIO, Dict, Any
 from datetime import datetime
 import mimetypes
 
-import boto3
-from botocore.exceptions import ClientError, NoCredentialsError, BotoCoreError
 from fastapi import HTTPException, status
 
 # Configure logging
 logger = logging.getLogger(__name__)
+
+# Import boto3 only when needed
+try:
+    import boto3
+    from botocore.exceptions import ClientError, NoCredentialsError, BotoCoreError
+    BOTO3_AVAILABLE = True
+except ImportError:
+    logger.warning("boto3 not available - S3 functionality will be disabled")
+    boto3 = None
+    ClientError = Exception
+    NoCredentialsError = Exception
+    BotoCoreError = Exception
+    BOTO3_AVAILABLE = False
 
 
 class S3Manager:
@@ -43,25 +54,42 @@ class S3Manager:
         self.aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
         self.aws_region = os.getenv('AWS_REGION', 'us-east-1')  # Default to us-east-1
         self.bucket_name = os.getenv('S3_BUCKET_NAME')
+        self.s3_client = None
+        self.is_configured = False
         
-        # Validate required environment variables
-        if not all([self.aws_access_key_id, self.aws_secret_access_key, self.bucket_name]):
-            error_msg = "Missing required AWS environment variables. Please set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and S3_BUCKET_NAME"
-            logger.error(error_msg)
-            raise ValueError(error_msg)
+        # Check if boto3 is available
+        if not BOTO3_AVAILABLE:
+            logger.warning("boto3 not available - S3 functionality will be disabled")
+            self.is_configured = False
+            return
         
-        # Initialize S3 client
-        try:
-            self.s3_client = boto3.client(
-                's3',
-                aws_access_key_id=self.aws_access_key_id,
-                aws_secret_access_key=self.aws_secret_access_key,
-                region_name=self.aws_region
-            )
-            logger.info(f"S3 client initialized successfully for bucket: {self.bucket_name}")
-        except Exception as e:
-            logger.error(f"Failed to initialize S3 client: {str(e)}")
-            raise
+        # Check if S3 is configured
+        if all([self.aws_access_key_id, self.aws_secret_access_key, self.bucket_name]):
+            try:
+                # Initialize S3 client
+                self.s3_client = boto3.client(
+                    's3',
+                    aws_access_key_id=self.aws_access_key_id,
+                    aws_secret_access_key=self.aws_secret_access_key,
+                    region_name=self.aws_region
+                )
+                self.is_configured = True
+                logger.info(f"S3 client initialized successfully for bucket: {self.bucket_name}")
+            except Exception as e:
+                logger.error(f"Failed to initialize S3 client: {str(e)}")
+                self.is_configured = False
+        else:
+            logger.warning("S3 not configured - missing required AWS environment variables. S3 functionality will be disabled.")
+            self.is_configured = False
+    
+    def is_s3_configured(self) -> bool:
+        """
+        Check if S3 is properly configured and available.
+        
+        Returns:
+            True if S3 is configured and available
+        """
+        return BOTO3_AVAILABLE and self.is_configured and self.s3_client is not None
     
     def _generate_unique_filename(self, original_filename: str) -> str:
         """
@@ -143,8 +171,14 @@ class S3Manager:
                 - filename: The unique filename generated
                 
         Raises:
-            HTTPException: On upload failure
+            HTTPException: On upload failure or if S3 is not configured
         """
+        if not self.is_s3_configured():
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="S3 storage is not configured. Please contact support."
+            )
+        
         try:
             # Validate image file
             self._validate_image_file(filename, content_type)
@@ -246,8 +280,12 @@ class S3Manager:
             True if deletion was successful
             
         Raises:
-            HTTPException: On deletion failure
+            HTTPException: On deletion failure or if S3 is not configured
         """
+        if not self.is_s3_configured():
+            logger.warning(f"Attempted to delete S3 image {s3_key} but S3 is not configured")
+            return True  # Return True to avoid blocking product deletion
+        
         try:
             logger.info(f"Deleting image from S3: {s3_key}")
             
@@ -293,6 +331,10 @@ class S3Manager:
         Returns:
             Number of images deleted
         """
+        if not self.is_s3_configured():
+            logger.warning(f"Attempted to delete S3 images for product {product_id} but S3 is not configured")
+            return 0
+        
         try:
             prefix = f"product-images/{product_id}/"
             
@@ -347,6 +389,9 @@ class S3Manager:
         Returns:
             True if connection is valid and bucket is accessible
         """
+        if not self.is_s3_configured():
+            return False
+        
         try:
             # Try to get bucket location (minimal permission required)
             self.s3_client.get_bucket_location(Bucket=self.bucket_name)
@@ -373,11 +418,5 @@ def get_s3_manager() -> S3Manager:
     """
     global s3_manager
     if s3_manager is None:
-        try:
-            s3_manager = S3Manager()
-        except ValueError as e:
-            logger.warning(f"S3Manager initialization failed: {str(e)}")
-            # Return None or raise based on your preference
-            # For now, we'll let the error propagate
-            raise
+        s3_manager = S3Manager()  # Will not raise exception now
     return s3_manager

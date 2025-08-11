@@ -74,7 +74,7 @@ class ProductResponse(BaseModel):
             created_at=product.created_at,
             updated_at=product.updated_at
         )
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "id": "product_abc123",
                 "name": "Premium Coffee Beans",
@@ -94,7 +94,7 @@ class ClickTrackingResponse(BaseModel):
     message: str
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "message": "Click tracked successfully"
             }
