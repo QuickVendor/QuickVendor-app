@@ -204,6 +204,7 @@ class S3Manager:
                 self.bucket_name,
                 s3_key,
                 ExtraArgs={
+                    'ACL': 'public-read',  # Make the image publicly readable
                     'ContentType': content_type,
                     'ContentDisposition': 'inline',  # Display in browser instead of download
                     'CacheControl': 'max-age=31536000',  # Cache for 1 year
