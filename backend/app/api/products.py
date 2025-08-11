@@ -122,10 +122,38 @@ async def create_product(
         
         # Handle multiple image uploads
         images = [image_1, image_2, image_3, image_4, image_5]
+        s3_manager = get_s3_manager()
+        
         for i, image in enumerate(images, 1):
             if image and image.filename:
-                image_url = await save_uploaded_file(image, f"{new_product.id}_img{i}")
-                setattr(new_product, f'image_url_{i}', image_url)
+                # Try S3 upload first if configured
+                if s3_manager.is_s3_configured():
+                    try:
+                        # Read file content
+                        file_content = await image.read()
+                        file_like = BytesIO(file_content)
+                        
+                        # Upload to S3
+                        upload_result = await s3_manager.upload_product_image(
+                            file_content=file_like,
+                            filename=image.filename,
+                            product_id=new_product.id,
+                            content_type=image.content_type
+                        )
+                        
+                        # Save S3 URL to database
+                        setattr(new_product, f'image_url_{i}', upload_result["url"])
+                        logging.info(f"Uploaded image {i} to S3 for product {new_product.id}")
+                    except Exception as e:
+                        logging.error(f"S3 upload failed, falling back to local: {str(e)}")
+                        # Reset file pointer and fall back to local storage
+                        image.file.seek(0)
+                        image_url = await save_uploaded_file(image, f"{new_product.id}_img{i}")
+                        setattr(new_product, f'image_url_{i}', image_url)
+                else:
+                    # Use local storage
+                    image_url = await save_uploaded_file(image, f"{new_product.id}_img{i}")
+                    setattr(new_product, f'image_url_{i}', image_url)
         
         if any(image and image.filename for image in images):
             db.commit()
