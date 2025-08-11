@@ -29,6 +29,14 @@ services:
         value: https://hooks.slack.com/services/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
       - key: FRONTEND_URL
         value: https://quickvendor-frontend.onrender.com
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_REGION
+        value: eu-north-1
+      - key: S3_BUCKET_NAME
+        value: quickvendor-products
 
 databases:
   - name: quickvendor-db

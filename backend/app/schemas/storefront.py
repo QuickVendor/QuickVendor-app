@@ -12,7 +12,7 @@ class PublicProductResponse(BaseModel):
 
     class Config:
         from_attributes = True
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "id": "product_uuid_1",
                 "name": "Cool T-Shirt",
@@ -30,7 +30,7 @@ class StorefrontResponse(BaseModel):
     products: List[PublicProductResponse]
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "vendor_name": "Awesome Wears",
                 "whatsapp_number": "2348012345678",

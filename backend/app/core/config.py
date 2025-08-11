@@ -24,6 +24,12 @@ class Settings(BaseSettings):
     SLACK_WEBHOOK_URL: Optional[str] = None
     FEEDBACK_SECRET_KEY: Optional[str] = None
     
+    # AWS S3 Configuration
+    AWS_ACCESS_KEY_ID: Optional[str] = None
+    AWS_SECRET_ACCESS_KEY: Optional[str] = None
+    AWS_REGION: Optional[str] = None
+    S3_BUCKET_NAME: Optional[str] = None
+    
     class Config:
         env_file = ".env"
 
