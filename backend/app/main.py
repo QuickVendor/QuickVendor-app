@@ -115,7 +115,33 @@ async def root():
 # Health check endpoint
 @app.get("/api/health")
 async def health_check():
-    return {"status": "OK", "message": "QuickVendor API is healthy"}
+    """Health check endpoint with S3 status."""
+    from app.services.s3_manager import get_s3_manager
+    
+    s3_manager = get_s3_manager()
+    s3_configured = s3_manager.is_s3_configured()
+    
+    # Check if boto3 is available
+    try:
+        import boto3
+        boto3_available = True
+        boto3_version = boto3.__version__
+    except ImportError:
+        boto3_available = False
+        boto3_version = None
+    
+    return {
+        "status": "OK",
+        "message": "QuickVendor API is healthy",
+        "s3": {
+            "configured": s3_configured,
+            "boto3_available": boto3_available,
+            "boto3_version": boto3_version,
+            "bucket": s3_manager.bucket_name if s3_configured else None,
+            "region": s3_manager.aws_region if s3_configured else None
+        },
+        "environment": os.getenv("ENVIRONMENT", "unknown")
+    }
 
 # Sentry test endpoints (development only)
 @app.get("/api/sentry/test-error")
