@@ -96,6 +96,30 @@ def run_startup_tasks():
     """
     logger.info("Running startup tasks...")
     
+    # Run database migrations first
+    try:
+        logger.info("Running database migrations...")
+        from pathlib import Path
+        import subprocess
+        import sys
+        
+        migrations_script = Path(__file__).parent.parent.parent / "run_migrations.py"
+        if migrations_script.exists():
+            result = subprocess.run(
+                [sys.executable, str(migrations_script)],
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            if result.returncode == 0:
+                logger.info("Database migrations completed successfully")
+            else:
+                logger.error(f"Database migrations failed: {result.stderr}")
+        else:
+            logger.warning(f"Migration script not found: {migrations_script}")
+    except Exception as e:
+        logger.error(f"Failed to run migrations: {e}")
+    
     # Ensure uploads directory exists
     ensure_uploads_directory()
     
