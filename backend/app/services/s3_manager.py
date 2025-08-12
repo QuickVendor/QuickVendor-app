@@ -353,6 +353,76 @@ class S3Manager:
             logger.error(f"Error uploading banner: {str(e)}")
             raise
     
+    async def delete_store_banner(self, s3_key: str) -> bool:
+        """
+        Delete a store banner image from S3 bucket.
+        
+        Args:
+            s3_key: The S3 object key to delete (should be in store-banners/ folder)
+            
+        Returns:
+            True if deletion was successful
+            
+        Raises:
+            HTTPException: On deletion failure or if S3 is not configured
+        """
+        if not self.is_s3_configured():
+            logger.warning(f"Attempted to delete S3 banner {s3_key} but S3 is not configured")
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="S3 storage is not configured. Cannot delete banner."
+            )
+
+        try:
+            logger.info(f"Deleting banner from S3: {s3_key}")
+            
+            # Validate that this is a banner image (security check)
+            if not s3_key.startswith("store-banners/"):
+                logger.error(f"Invalid banner S3 key: {s3_key}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid banner image path"
+                )
+            
+            self.s3_client.delete_object(
+                Bucket=self.bucket_name,
+                Key=s3_key
+            )
+            
+            logger.info(f"Successfully deleted banner: {s3_key}")
+            return True
+            
+        except ClientError as e:
+            error_code = e.response['Error']['Code']
+            error_message = e.response['Error']['Message']
+            
+            logger.error(f"Failed to delete banner: {error_code} - {error_message}")
+            
+            if error_code == 'AccessDenied':
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Access denied to delete banner from storage."
+                )
+            elif error_code == 'NoSuchKey':
+                # Banner doesn't exist in S3, but that's okay
+                logger.info(f"Banner {s3_key} doesn't exist in S3, considering deletion successful")
+                return True
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Failed to delete banner: {error_message}"
+                )
+                
+        except HTTPException:
+            # Re-raise HTTPExceptions
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error during banner deletion: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="An unexpected error occurred during banner deletion."
+            )
+    
     async def delete_product_image(self, s3_key: str) -> bool:
         """
         Delete a product image from S3 bucket.
