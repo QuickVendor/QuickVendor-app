@@ -199,12 +199,13 @@ class S3Manager:
             # Upload file to S3
             logger.info(f"Uploading image to S3: {s3_key}")
             
+            # Note: ACL is not set here because the bucket has ACLs disabled
+            # Public access is managed through bucket policy instead
             self.s3_client.upload_fileobj(
                 file_content,
                 self.bucket_name,
                 s3_key,
                 ExtraArgs={
-                    'ACL': 'public-read',  # Make the image publicly readable
                     'ContentType': content_type,
                     'ContentDisposition': 'inline',  # Display in browser instead of download
                     'CacheControl': 'max-age=31536000',  # Cache for 1 year
