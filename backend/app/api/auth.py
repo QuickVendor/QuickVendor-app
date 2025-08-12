@@ -152,6 +152,113 @@ async def debug_auth(request: Request):
     }
 
 
+@router.post("/refresh")
+async def refresh_token(
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db)
+):
+    """Refresh an expired token with a new one."""
+    try:
+        # Try to get token from request (cookie or header)
+        token = None
+        
+        # Check Authorization header first
+        auth_header = request.headers.get("authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.replace("Bearer ", "")
+        
+        # Check cookie if no header
+        if not token:
+            token = request.cookies.get("access_token")
+        
+        if not token:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="No token provided"
+            )
+        
+        # Decode token without verification to get the email
+        from jose import jwt
+        try:
+            # Decode without verification to get payload even if expired
+            unverified_payload = jwt.decode(
+                token, 
+                settings.SECRET_KEY, 
+                algorithms=[settings.ALGORITHM],
+                options={"verify_exp": False}  # Don't verify expiration
+            )
+            email = unverified_payload.get("sub")
+            
+            if not email:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid token payload"
+                )
+            
+            # Verify user exists
+            user = db.query(User).filter(User.email == email).first()
+            if not user:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="User not found"
+                )
+            
+            # Create new token
+            new_access_token = create_access_token(
+                data={"sub": user.email}
+            )
+            
+            # Set new cookie
+            is_production = os.getenv("RENDER") is not None or os.getenv("ENVIRONMENT") == "production"
+            
+            if is_production:
+                response.set_cookie(
+                    key="access_token",
+                    value=new_access_token,
+                    httponly=True,
+                    secure=True,
+                    samesite="none",
+                    max_age=60*60*24*7,  # 7 days
+                    path="/",
+                    domain=None
+                )
+            else:
+                response.set_cookie(
+                    key="access_token",
+                    value=new_access_token,
+                    httponly=True,
+                    secure=False,
+                    samesite="lax",
+                    max_age=60*60*24*7,  # 7 days
+                    path="/",
+                    domain=None
+                )
+            
+            logging.info(f"Token refreshed for user: {user.email}")
+            
+            return {
+                "access_token": new_access_token,
+                "token_type": "bearer",
+                "message": "Token refreshed successfully"
+            }
+            
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid token: {str(e)}"
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error refreshing token: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to refresh token"
+        )
+
+
 @router.get("/check-session")
 async def check_session(request: Request):
     """Simple endpoint to check if user has valid authentication."""
@@ -193,7 +300,7 @@ async def check_session(request: Request):
         
     except JWTError as e:
         print(f"DEBUG check-session: JWT error - {e}")
-        return {"authenticated": False, "source": "expired"}
+        return {"authenticated": False, "source": "expired", "error": str(e)}
     except Exception as e:
         print(f"DEBUG check-session: Unexpected error - {e}")
         return {"authenticated": False, "source": "error"}
