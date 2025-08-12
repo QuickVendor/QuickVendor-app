@@ -12,51 +12,56 @@ router = APIRouter()
 
 
 @router.get(
-    "/{username}",
+    "/{store_identifier}",
     response_model=StorefrontResponse,
     responses={
-        404: {"model": ErrorResponse, "description": "Username not found"}
+        404: {"model": ErrorResponse, "description": "Store not found"}
     }
 )
 async def get_public_storefront(
-    username: str,
+    store_identifier: str,
     db: Session = Depends(get_db)
 ):
     """
-    Get public storefront data for a given username.
+    Get public storefront data for a given store.
     
     This is a public endpoint that displays all available (in-stock) products
     for a specific vendor's storefront.
     
-    - **username**: The vendor's username (extracted from email before @)
+    - **store_identifier**: The store's custom slug OR username (extracted from email before @)
     
     Returns vendor information and all available products.
     """
     # Add breadcrumb for storefront access
     add_breadcrumb(
-        message=f"Storefront access attempt for username: {username}",
+        message=f"Storefront access attempt for: {store_identifier}",
         category="storefront",
         level="info",
-        data={"username": username}
+        data={"store_identifier": store_identifier}
     )
     
-    # Find user by extracting username from email
-    # Username is the part before @ in the email
+    # First try to find by store_slug (custom URL)
     user = db.query(User).filter(
-        User.email.like(f"{username}@%")
+        User.store_slug == store_identifier
     ).first()
     
+    # If not found, try to find by username (email prefix) for backward compatibility
     if not user:
-        logging.warning(f"Storefront not found for username: {username}")
+        user = db.query(User).filter(
+            User.email.like(f"{store_identifier}@%")
+        ).first()
+    
+    if not user:
+        logging.warning(f"Storefront not found for: {store_identifier}")
         add_breadcrumb(
             message="Storefront not found",
             category="storefront",
             level="warning",
-            data={"username": username}
+            data={"store_identifier": store_identifier}
         )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Username not found"
+            detail="Store not found"
         )
     
     # Get all available (in-stock) products for this user
@@ -84,8 +89,11 @@ async def get_public_storefront(
             is_available=product.is_available
         ))
     
-    # Extract vendor name from email (part before @)
-    vendor_name = user.email.split('@')[0].replace('.', ' ').replace('_', ' ').replace('-', ' ').title()
+    # Use custom store name if available, otherwise extract from email
+    if user.store_name:
+        vendor_name = user.store_name
+    else:
+        vendor_name = user.email.split('@')[0].replace('.', ' ').replace('_', ' ').replace('-', ' ').title()
     
     # Log successful storefront access
     logging.info(f"Storefront accessed successfully for user: {user.email} ({len(public_products)} products)")
@@ -94,7 +102,7 @@ async def get_public_storefront(
         category="storefront",
         level="info",
         data={
-            "username": username,
+            "store_identifier": store_identifier,
             "vendor_email": user.email,
             "product_count": len(public_products)
         }
@@ -105,7 +113,7 @@ async def get_public_storefront(
         "Storefront viewed",
         level="info",
         context={
-            "username": username,
+            "store_identifier": store_identifier,
             "vendor_id": str(user.id),
             "vendor_email": user.email,
             "product_count": len(public_products)
@@ -115,5 +123,7 @@ async def get_public_storefront(
     return StorefrontResponse(
         vendor_name=vendor_name,
         whatsapp_number=user.whatsapp_number,
-        products=public_products
+        products=public_products,
+        banner_url=user.banner_url,
+        store_slug=user.store_slug
     )

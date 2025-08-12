@@ -274,6 +274,85 @@ class S3Manager:
                 detail="An unexpected error occurred during image upload."
             )
     
+    async def upload_store_banner(
+        self, 
+        file_content: BinaryIO, 
+        filename: str,
+        user_id: str,
+        content_type: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Upload a store banner image to S3 bucket.
+        
+        Args:
+            file_content: Binary file content to upload
+            filename: Original filename
+            user_id: ID of the user/store owner
+            content_type: MIME type of the file
+            
+        Returns:
+            Dictionary containing:
+                - url: Public URL of the uploaded banner
+                - key: S3 object key
+                - filename: The unique filename generated
+        """
+        if not self.is_s3_configured():
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="S3 storage is not configured. Please contact support."
+            )
+        
+        try:
+            # Validate image file
+            self._validate_image_file(filename, content_type)
+            
+            # Generate unique filename
+            unique_filename = self._generate_unique_filename(filename)
+            
+            # Construct S3 object key with folder structure for banners
+            s3_key = f"store-banners/{user_id}/{unique_filename}"
+            
+            # Determine content type if not provided
+            if not content_type:
+                content_type = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+            
+            # Upload file to S3
+            logger.info(f"Uploading banner to S3: {s3_key}")
+            
+            self.s3_client.upload_fileobj(
+                file_content,
+                self.bucket_name,
+                s3_key,
+                ExtraArgs={
+                    'ContentType': content_type,
+                    'ContentDisposition': 'inline',
+                    'CacheControl': 'max-age=31536000',  # Cache for 1 year
+                    'Metadata': {
+                        'user_id': str(user_id),
+                        'original_filename': filename,
+                        'upload_timestamp': datetime.utcnow().isoformat(),
+                        'type': 'store_banner'
+                    }
+                }
+            )
+            
+            # Construct public URL
+            public_url = f"https://{self.bucket_name}.s3.{self.aws_region}.amazonaws.com/{s3_key}"
+            
+            logger.info(f"Successfully uploaded banner: {public_url}")
+            
+            return {
+                "url": public_url,
+                "key": s3_key,
+                "filename": unique_filename,
+                "user_id": user_id,
+                "upload_timestamp": datetime.utcnow().isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"Error uploading banner: {str(e)}")
+            raise
+    
     async def delete_product_image(self, s3_key: str) -> bool:
         """
         Delete a product image from S3 bucket.

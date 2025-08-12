@@ -13,6 +13,9 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     whatsapp_number = Column(String, nullable=False)
     store_url = Column(String, unique=True, nullable=True)
+    store_name = Column(String, nullable=True)  # Custom store name
+    store_slug = Column(String, unique=True, index=True, nullable=True)  # URL-friendly store identifier
+    banner_url = Column(String, nullable=True)  # S3 URL for store banner image
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
