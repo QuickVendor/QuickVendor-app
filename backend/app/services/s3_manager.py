@@ -190,7 +190,7 @@ class S3Manager:
             unique_filename = self._generate_unique_filename(filename)
             
             # Construct S3 object key with folder structure
-            s3_key = f"product-images/{product_id}/{unique_filename}"
+            s3_key = f"qv-products-img/{product_id}/{unique_filename}"
             
             # Determine content type if not provided
             if not content_type:
@@ -199,6 +199,8 @@ class S3Manager:
             # Upload file to S3
             logger.info(f"Uploading image to S3: {s3_key}")
             
+            # Note: ACL is not set here because the bucket has ACLs disabled
+            # Public access is managed through bucket policy instead
             self.s3_client.upload_fileobj(
                 file_content,
                 self.bucket_name,
@@ -339,7 +341,7 @@ class S3Manager:
             return 0
         
         try:
-            prefix = f"product-images/{product_id}/"
+            prefix = f"qv-products-img/{product_id}/"
             
             # List all objects with the prefix
             response = self.s3_client.list_objects_v2(
