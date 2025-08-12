@@ -143,6 +143,58 @@ async def health_check():
         "environment": os.getenv("ENVIRONMENT", "unknown")
     }
 
+# Diagnostic endpoint - REMOVE IN PRODUCTION
+@app.get("/api/diagnostics")
+async def diagnostics():
+    """Diagnostic endpoint to debug configuration issues."""
+    import sys
+    import subprocess
+    
+    # Get environment variables (safely)
+    aws_key = os.getenv("AWS_ACCESS_KEY_ID")
+    aws_secret = os.getenv("AWS_SECRET_ACCESS_KEY")
+    
+    # Check installed packages
+    try:
+        result = subprocess.run([sys.executable, "-m", "pip", "list"], 
+                              capture_output=True, text=True, timeout=5)
+        installed_packages = result.stdout
+        has_boto3 = "boto3" in installed_packages
+    except:
+        installed_packages = "Could not get package list"
+        has_boto3 = False
+    
+    # Try importing boto3
+    boto3_import_error = None
+    try:
+        import boto3
+        boto3_working = True
+        boto3_version = boto3.__version__
+    except ImportError as e:
+        boto3_working = False
+        boto3_version = None
+        boto3_import_error = str(e)
+    
+    return {
+        "python_version": sys.version,
+        "environment_vars": {
+            "ENVIRONMENT": os.getenv("ENVIRONMENT", "NOT SET"),
+            "RENDER": os.getenv("RENDER", "NOT SET"),
+            "AWS_ACCESS_KEY_ID": "SET" if aws_key else "NOT SET",
+            "AWS_SECRET_ACCESS_KEY": "SET" if aws_secret else "NOT SET",
+            "AWS_REGION": os.getenv("AWS_REGION", "NOT SET"),
+            "S3_BUCKET_NAME": os.getenv("S3_BUCKET_NAME", "NOT SET")
+        },
+        "boto3": {
+            "in_package_list": has_boto3,
+            "can_import": boto3_working,
+            "version": boto3_version,
+            "import_error": boto3_import_error
+        },
+        "working_directory": os.getcwd(),
+        "python_path": sys.path[:5]  # First 5 paths
+    }
+
 # Sentry test endpoints (development only)
 @app.get("/api/sentry/test-error")
 async def test_sentry_error():
