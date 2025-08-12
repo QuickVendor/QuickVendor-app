@@ -28,12 +28,16 @@ class StorefrontResponse(BaseModel):
     vendor_name: str
     whatsapp_number: str
     products: List[PublicProductResponse]
+    banner_url: str | None = None
+    store_slug: str | None = None
 
     class Config:
         json_schema_extra = {
             "example": {
                 "vendor_name": "Awesome Wears",
                 "whatsapp_number": "2348012345678",
+                "banner_url": "https://s3.amazonaws.com/store-banners/banner.jpg",
+                "store_slug": "awesome-wears",
                 "products": [
                     {
                         "id": "product_uuid_1",

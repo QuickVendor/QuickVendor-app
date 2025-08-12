@@ -41,5 +41,22 @@ class UserProfile(BaseModel):
     email: str
     whatsapp_number: str
     store_url: str | None = None
+    store_name: str | None = None
+    store_slug: str | None = None
+    banner_url: str | None = None
 
     model_config = {"from_attributes": True}
+
+
+class UpdateStoreRequest(BaseModel):
+    store_name: Optional[str] = Field(None, min_length=3, max_length=100)
+    store_slug: Optional[str] = Field(None, min_length=3, max_length=50, pattern="^[a-z0-9-]+$")
+    
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "store_name": "John's Fashion Store",
+                "store_slug": "johns-fashion"
+            }
+        }
+    }
