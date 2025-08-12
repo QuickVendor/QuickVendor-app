@@ -7,6 +7,7 @@ import logging
 from app.core.database import engine, Base
 from app.core.sentry import init_sentry
 from app.core.middleware import log_requests_middleware, SentryMiddleware
+from app.core.startup import run_startup_tasks
 from app.api import users, auth, products, store, feedback
 
 # Initialize Sentry before creating the app
@@ -20,6 +21,9 @@ logging.basicConfig(
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
+
+# Run startup tasks (fix broken images, ensure directories, etc.)
+run_startup_tasks()
 
 # Create FastAPI app
 app = FastAPI(
@@ -100,6 +104,7 @@ app.include_router(
 )
 
 # Mount static files for uploaded images
+# Directory creation is handled by startup tasks
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # Root endpoint
