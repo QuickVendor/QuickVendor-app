@@ -316,22 +316,48 @@ async def delete_store_banner(
         )
     
     try:
+        s3_deletion_success = True
+        s3_error_message = None
+        
         # Delete from S3 if it's an S3 URL
         if current_user.banner_url.startswith("https://"):
             s3_manager = get_s3_manager()
             if s3_manager.is_s3_configured():
                 try:
                     s3_key = current_user.banner_url.split(".amazonaws.com/")[-1]
-                    await s3_manager.delete_product_image(s3_key)
-                except:
-                    pass  # Ignore S3 deletion errors
+                    logging.info(f"Attempting to delete banner from S3: {s3_key}")
+                    await s3_manager.delete_store_banner(s3_key)
+                    logging.info(f"Successfully deleted banner from S3: {s3_key}")
+                except HTTPException as he:
+                    # S3Manager raises HTTPException for known errors
+                    s3_deletion_success = False
+                    s3_error_message = he.detail
+                    logging.error(f"S3 deletion failed with HTTPException: {he.detail}")
+                except Exception as se:
+                    # Unexpected S3 errors
+                    s3_deletion_success = False
+                    s3_error_message = str(se)
+                    logging.error(f"S3 deletion failed with unexpected error: {se}")
+            else:
+                logging.warning("S3 not configured, skipping S3 deletion")
         
-        # Clear banner URL from database
+        # If S3 deletion failed, raise error immediately
+        if not s3_deletion_success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to delete banner from storage: {s3_error_message}"
+            )
+        
+        # Clear banner URL from database only if S3 deletion succeeded
         current_user.banner_url = None
         db.commit()
         
-        logging.info(f"Banner deleted for user {current_user.email}")
+        logging.info(f"Banner deleted successfully for user {current_user.email}")
         
+    except HTTPException:
+        # Re-raise HTTPExceptions (like S3 errors)
+        db.rollback()
+        raise
     except Exception as e:
         db.rollback()
         logging.error(f"Failed to delete banner: {str(e)}")
