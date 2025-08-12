@@ -4,7 +4,7 @@ from sqlalchemy.exc import IntegrityError
 import logging
 import re
 from io import BytesIO
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from app.core.database import get_db
 from app.core.security import get_password_hash
@@ -204,22 +204,42 @@ async def update_store_info(
 
 @router.post("/me/banner", response_model=Dict[str, Any])
 async def upload_store_banner(
-    banner: UploadFile = File(..., description="Banner image file"),
+    banner: Optional[UploadFile] = File(None, description="Banner image file"),
+    image: Optional[UploadFile] = File(None, description="Banner image file (alternative field name)"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
     Upload a banner image for the store.
     
-    - **banner**: Image file (JPEG, PNG, GIF, WebP, BMP)
+    - **banner** or **image**: Image file (JPEG, PNG, GIF, WebP, BMP)
     - Maximum file size: 5MB
     - Recommended dimensions: 1200x300 pixels
     
     The banner will be uploaded to S3 and the URL will be saved to the user's profile.
     """
+    # Debug logging to see what was received
+    logging.info(f"Banner upload endpoint called by {current_user.email}")
+    logging.info(f"Banner param: {banner}")
+    logging.info(f"Image param: {image}")
+    
+    # Handle both possible field names (banner or image)
+    uploaded_file = banner or image
+    
+    if not uploaded_file:
+        logging.warning(f"No file received in banner upload for user {current_user.email}")
+        logging.warning(f"Banner field: {banner}, Image field: {image}")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="No image file provided. Please upload a banner image."
+        )
+    
+    # Log the upload attempt
+    logging.info(f"Banner upload attempt for user {current_user.email}: filename={uploaded_file.filename}, content_type={uploaded_file.content_type}")
+    
     # Check file size (limit to 5MB for banners)
     MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB in bytes
-    file_content = await banner.read()
+    file_content = await uploaded_file.read()
     file_size = len(file_content)
     
     if file_size > MAX_FILE_SIZE:
@@ -244,9 +264,9 @@ async def upload_store_banner(
         # Upload to S3 with a special path for banners
         upload_result = await s3_manager.upload_store_banner(
             file_content=file_like,
-            filename=banner.filename,
+            filename=uploaded_file.filename,
             user_id=current_user.id,
-            content_type=banner.content_type
+            content_type=uploaded_file.content_type
         )
         
         # Delete old banner if exists
