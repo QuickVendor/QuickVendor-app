@@ -3,12 +3,7 @@ services:
     name: quickvendor-backend
     runtime: python
     plan: free
-    buildCommand: |
-      cd backend && 
-      python -m pip install --upgrade pip && 
-      pip install -r requirements-production.txt && 
-      pip install boto3==1.35.0 botocore==1.35.0 s3transfer==0.10.0 && 
-      python -c "import boto3; print(f'boto3 {boto3.__version__} installed')" || echo "boto3 installation failed"
+    buildCommand: cd backend && pip install -r requirements-production.txt
     startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
     pythonVersion: "3.12"
     envVars:
